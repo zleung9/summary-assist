@@ -2,10 +2,12 @@ import os
 import subprocess
 from pytube import YouTube
 from moviepy.editor import *
-import speech_recognition as sr
+import openai
+openai.api_key = "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"
+
 
 # Replace the URL with the URL of the video you want to download
-video_url = 'https://www.youtube.com/watch?v=GmShaplONDg'
+video_url = 'https://www.youtube.com/watch?v=8Xy8QBnt6yg'
 
 # Create a YouTube object
 yt = YouTube(video_url)
@@ -30,24 +32,8 @@ subprocess.run(['ffmpeg', '-i', video_path, '-vn', '-acodec', 'pcm_s16le', '-ar'
 print('Audio extracted successfully.')
 
 # Transcribe the audio to text
-recognizer = sr.Recognizer()
-
-
-with sr.AudioFile(audio_path) as source:
-    audio_data = recognizer.record(source)
-
-try:
-    # text = recognizer.recognize_google(audio_data)
-    text = recognizer.recognize_sphinx(audio_data, language="zh-CN")
-    print('Transcription:\n', text[:20])
-
-    # Save transcription to a text file
-    with open('transcription.txt', 'w') as f:
-        f.write(text)
-
-    print('Transcription saved to transcription.txt.')
-
-except sr.UnknownValueError:
-    print('Speech Recognition could not understand the audio.')
-except sr.RequestError as e:
-    print(f'Speech Recognition request failed: {e}')
+audio_file= open("/Users/zhuliang/Downloads/audio.wav", "rb")
+transcript = openai.Audio.transcribe("whisper-1", audio_file)
+with open("transcription.txt", "wt") as f:
+    f.writelines(transcript["text"])
+    print("transcription finished!")
