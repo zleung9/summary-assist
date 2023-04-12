@@ -1,16 +1,12 @@
 
-For Debian-based systems (Ubuntu, Linux Mint, etc.):
-`sudo apt-get install -y python3 python3-pip python3-dev libasound2-dev libpulse-dev swig
-pip3 install pocketsphinx`
+Example of `config.json`
 
-For macOS:
-First, install Homebrew if you haven't already:
-`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+.. code-block:: python
 
-Then, install PocketSphinx using Homebrew:
-`brew install swig cmu-pocketsphinx sphinxbase 
-pip install  pocketsphinx`
+    {
+        "api_key": "xxxxxxxxxxxx",
+        "youtube_url": "https://www.youtube.com/watch?v=xxxxxxxx",
+        "download_path": "folder_to_download_video"
+    }
 
-
-OPENAI authentication key 
-`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`
+    
