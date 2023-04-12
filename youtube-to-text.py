@@ -1,39 +1,37 @@
 import os
-import subprocess
 from pytube import YouTube
 from moviepy.editor import *
 import openai
-openai.api_key = "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"
+import json
+import time
 
+with open('config.json', 'r') as json_file:
+    config = json.load(json_file)
 
-# Replace the URL with the URL of the video you want to download
-video_url = 'https://www.youtube.com/watch?v=8Xy8QBnt6yg'
+openai.api_key = config["api_key"]
+video_url = config["youtube_url"]
+download_path = config["download_path"]
 
-# Create a YouTube object
+# Create a YouTube object and get the highest resolution video stream
 yt = YouTube(video_url)
-
-# Get the highest resolution video stream
-video = yt.streams.get_highest_resolution()
-
-# Set the download path (optional)
-download_path = '/Users/zhuliang/Downloads'  # The current directory
+youtube_video = yt.streams.get_highest_resolution()
+# name and path without extension
+name = youtube_video.default_filename.rsplit('.', 1)[0]
+path = os.path.join(download_path, name) 
 
 # Download the video
-video.download(download_path)
+youtube_video.download(download_path)
+print(f'Video downloaded successfully: {name}')
 
-print(f'Video downloaded successfully: {video.default_filename}')
-
-# Convert video to audio
-video_path = os.path.join(download_path, video.default_filename)
-audio_path = os.path.join(download_path, 'audio.wav')
-
-subprocess.run(['ffmpeg', '-i', video_path, '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', audio_path])
-
+# Extract audio from the video
+video = VideoFileClip(path+".mp4")
+video.audio.write_audiofile(path+".mp3", fps=16000)
 print('Audio extracted successfully.')
 
 # Transcribe the audio to text
-audio_file= open("/Users/zhuliang/Downloads/audio.wav", "rb")
+audio_file= open(path+".mp3", "rb")
+start = time.time()
 transcript = openai.Audio.transcribe("whisper-1", audio_file)
-with open("transcription.txt", "wt") as f:
+with open(path+".txt", "wt") as f:
     f.writelines(transcript["text"])
-    print("transcription finished!")
+print(f"Done! Transcription took {(time.time() - start):.1f}s.")
