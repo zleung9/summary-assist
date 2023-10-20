@@ -21,12 +21,12 @@ path = os.path.join(download_path, name)
 
 # Download the video
 youtube_video.download(download_path)
-print(f'Video downloaded successfully: {name}')
+print(f'Downloaded: {name}')
 
 # Extract audio from the video
 video = VideoFileClip(path+".mp4")
 video.audio.write_audiofile(path+".mp3", fps=16000)
-print('Audio extracted successfully.')
+print(f'Audio extracted: {name}\n Transcription in progress...')
 
 # Transcribe the audio to text
 audio_file= open(path+".mp3", "rb")
