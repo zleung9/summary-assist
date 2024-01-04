@@ -4,10 +4,6 @@ from newspaper.article import ArticleException
 from openai import OpenAI
 import argparse
 
-with open('config.json', 'r') as json_file:
-    config = json.load(json_file)
-client = OpenAI(api_key=config["api_key"])
-
 class News:
     def __init__(self):
         self.url = "" # url of news
@@ -18,6 +14,7 @@ class News:
         self.tags = [] # tags of the article
         self.category = "" # category of the article
 
+
     @classmethod
     def from_url(cls, url, summarize=True, gpt_client=None):
         news = cls()
@@ -26,7 +23,8 @@ class News:
         if summarize:
             news.summarize(gpt_client)
         return news
-    
+
+
     def summarize(self, client):
         if self.text == "":
             self.summary = ""
@@ -45,6 +43,7 @@ class News:
         self.title = self._content["title"]
         self.summary = self._content["body"]
 
+
     def fetch_article(self):
         article = Article(self.url)
         try:
@@ -56,29 +55,39 @@ class News:
 
         self.text = article.text
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--url", default="")
     parser.add_argument("-f", "--file", default="")
     parser.add_argument("-s", "--summarize", default=True)
+    parser.add_argument("-c", "--config", default="config.json")
     args = parser.parse_args()
     return args
+
 
 def parse_file(file_path):
     with open(file_path, "r") as f:
         urls_raw = "".join(f.readlines())
         urls = ["http" + a.strip() for a in urls_raw.split("http")]
     return urls
+
+
+
+
+
 if __name__ == "__main__":
     
     args = parse_args()
+    with open(args.config, 'r') as json_file:
+        config = json.load(json_file)
+    
+    client = OpenAI(api_key=config["api_key"])
+
     if args.file:
-        file_path = args.file
-        urls = parse_file(file_path)
         collection = []
-        for url in urls:
-            if url == "\n":
-                continue
+        for url in parse_file(args.file):
+            if url == "\n": continue
             news = News.from_url(url, gpt_client=client)
             print(news.title)
             collection.append(f"####\n{news.title}\n\n{news.summary}\n\n{news.url}\n\n")
@@ -91,12 +100,3 @@ if __name__ == "__main__":
         print("\n" + news.title)
         print("\n" + news.summary)
         print("\n" + news.url)
-
-# Replace with your news source
-
-news_source = """
-https://www.reuters.com/business/autos-transportation/nearly-half-new-passenger-cars-eu-electrified-acea-2023-12-20/
-"""
-news = News.from_url(news_source, gpt_client=client)
-print(news.title)
-print(news.summary)
