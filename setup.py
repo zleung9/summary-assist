@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name='article',
+setup(name='wenmi',
       version='0.0.0',
       description="Transcribe and summrize audio using ChatGPT",
       license='See license',
