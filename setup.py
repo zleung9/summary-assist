@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
-setup(name='wenmi',
+setup(name='news',
       version='0.0.0',
-      description="Transcribe and summrize audio using ChatGPT",
+      description="summarize news articles",
       license='See license',
       packages=find_packages(),
       python_requires=">=3.8",
@@ -14,7 +14,7 @@ setup(name='wenmi',
      ],
      entry_points={ # create scripts and add to sys.PATH
         'console_scripts': [
-            'transcribe = transcribe.transcribe:main',
+            'generate_news = news.generate_news:main',
         ],
     },
 )

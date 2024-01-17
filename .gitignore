@@ -3,3 +3,5 @@ config.json
 *.egg-info
 __pycache__
 .DS_Store
+legacy
+urls.txt
