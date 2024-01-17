@@ -1,10 +1,10 @@
 import json
-from news.news import News
-from openai import OpenAI
+from news.news import News, GPTReporter
 import argparse
 
 
 def parse_args():
+    """Parse command line arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--url", default="")
     parser.add_argument("-f", "--file", default="")
@@ -15,6 +15,7 @@ def parse_args():
 
 
 def parse_file(file_path):
+    """Parse a file of urls into a list of urls"""
     with open(file_path, "r") as f:
         urls_raw = "".join(f.readlines())
         urls = ["http" + a.strip() for a in urls_raw.split("http")]
@@ -25,21 +26,21 @@ def main():
     args = parse_args()
     with open(args.config, 'r') as json_file:
         config = json.load(json_file)
-    
-    client = OpenAI(api_key=config["api_key"])
+    reporter = GPTReporter("LiquidMetalClimate", api_key=config["api_key"])
+
     if args.file:
-        collection = []
+        news_collection = []
         for url in parse_file(args.file):
             if url == "\n": continue
-            news = News.from_url(url, summarize=args.summarize, gpt_client=client)
+            news = News.from_url(url, summarize=args.summarize, reporter=reporter)
             print(news.title)
-            collection.append(f"####\n{news.title}\n\n{news.summary}\n\n{news.url}\n\n")
+            news_collection.append(f"####\n{news.title}\n\n{news.summary}\n\n{news.url}\n\n")
         with open(args.file, "a") as f:
             f.write("\n\n")
-            for entry in collection:
+            for entry in news_collection:
                 f.write(f"\n{entry}")
     elif args.url:
-        news = News.from_url(args.url, summarize=args.summarize, gpt_client=client)
+        news = News.from_url(args.url, summarize=args.summarize, reporter=reporter)
         print("\n" + news.title)
         print("\n" + news.summary)
         print("\n" + news.url)

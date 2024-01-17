@@ -25,35 +25,15 @@ class News:
         }
 
     @classmethod
-    def from_url(cls, url, summarize=True, gpt_client:OpenAI=None):
+    def from_url(cls, url, summarize=True, reporter:"GPTReporter"=None):
         news = cls()
         news.url = url
         news.fetch_article()
         if summarize:
-            news.summarize(gpt_client)
+            if reporter is None:
+                raise ValueError("Reporter must be provided if summarize is True")
+            reporter.summarize(news)
         return news
-
-
-    def summarize(self, client:OpenAI):
-        if self.text == "":
-            self.summary = ""
-            return
-        self._response = client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
-            response_format={ "type": "json_object" },
-            seed=42,
-            messages=[
-                {"role": "system", "content": "You are a profssional news report in climate tech. You are specific about numbers, and you are designed to output JSON."},
-                {"role": "user", "content": f"Here is a news article about climate tech.\n {self.text}"},
-                {"role": "user", "content": "Please summarize the above text in the form of title and body. Title should be 10 words or less. Body should be 60 words or less. "},
-                {"role": "user", "content": "A of the news from the original article if any."},
-            ]
-        )
-        self._content = json.loads(self._response.choices[0].message.content)
-        self.title = self._content["title"]
-        self.summary = self._content["body"]
-
-        return self.output # return the output (a property of the class)
 
 
     def fetch_article(self):
@@ -66,3 +46,43 @@ class News:
             self.title = "Failed to download article"
 
         self.text = article.text
+
+
+class GPTReporter:
+    def __init__(self, name, api_key=""):
+        self.name = name
+        self.client = OpenAI(api_key=api_key)
+        self.model = "gpt-3.5-turbo-1106"
+        self.format = { "type": "json_object" }
+        self.text = ""
+        self._response = None
+        self._content = None
+
+    @property
+    def messages(self):
+        prompt =  [
+            {"role": "system", "content": "You are a profssional news report in climate tech. You are specific about numbers, and you are designed to output JSON."},
+            {"role": "user", "content": f"Here is a news article about climate tech.\n {self.text}"},
+            {"role": "user", "content": "Please summarize the above text in the form of title and body. Title should be 10 words or less. Body should be 60 words or less. "},
+            {"role": "user", "content": "A of the news from the original article if any."},
+        ]
+        return prompt
+    
+    def generate_response(self, *args, **kwargs):
+        return self.client.chat.completions.create(*args, **kwargs)
+    
+    def summarize(self, news:News):
+        self.text = news.text
+        if self.text == "":
+            return
+        self._response = self.generate_response(
+            model=self.model,
+            response_format=self.format,
+            seed=42,
+            messages=self.messages
+        )
+        self._content = json.loads(self._response.choices[0].message.content)
+        
+        news._content = self._content
+        news.title = news._content["title"]
+        news.summary = news._content["body"]

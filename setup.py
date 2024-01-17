@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='news',
-      version='0.0.0',
+      version='0.0.1',
       description="summarize news articles",
       license='See license',
       packages=find_packages(),
