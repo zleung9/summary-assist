@@ -4,4 +4,5 @@ config.json
 __pycache__
 .DS_Store
 legacy
-urls.txt
+*.txt
+*.csv

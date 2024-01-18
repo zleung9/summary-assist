@@ -20,7 +20,7 @@ Example:
 }
 ```
 
-#### Getting started
+### Getting started
 
 1. Single url mode. Running the command below. The rsult will be displayed in terminal.
    ```shell

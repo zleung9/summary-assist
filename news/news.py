@@ -2,6 +2,7 @@ import json
 from newspaper import Article
 from newspaper.article import ArticleException
 from openai import OpenAI
+import pandas as pd
 
 class News:
     def __init__(self):
@@ -10,18 +11,18 @@ class News:
         self.title = "" # title of news
         self.date = "" # date of news
         self.text = "" # full text of the article
-        self.tags = [] # tags of the article
+        self.tags = "" # tags of the article
         self.category = "" # category of the article
 
     @property
     def output(self):
         return {
-            "title": self.title,
-            "summary": self.summary,
-            "date": self.date,
-            "url": self.url,
-            "tags": self.tags,
-            "category": self.category
+            "Title": self.title,
+            "Body": self.summary,
+            "Date": self.date,
+            "Source": self.url,
+            "Topic": self.tags,
+            "Category": self.category
         }
 
     @classmethod
@@ -57,21 +58,32 @@ class GPTReporter:
         self.text = ""
         self._response = None
         self._content = None
+        self.collection = []
 
-    @property
-    def messages(self):
+    def messages(self, n_words=60):
         prompt =  [
             {"role": "system", "content": "You are a profssional news report in climate tech. You are specific about numbers, and you are designed to output JSON."},
             {"role": "user", "content": f"Here is a news article about climate tech.\n {self.text}"},
-            {"role": "user", "content": "Please summarize the above text in the form of title and body. Title should be 10 words or less. Body should be 60 words or less. "},
-            {"role": "user", "content": "A of the news from the original article if any."},
+            {"role": "user", "content": f"Please summarize the above text into field: 'title' and 'body'. Title should be 10 words or less. Body should be {n_words} words or less. "},
+            {"role": "user", "content": "Add  of the news from the original article if any."},
         ]
         return prompt
     
     def generate_response(self, *args, **kwargs):
         return self.client.chat.completions.create(*args, **kwargs)
     
-    def summarize(self, news:News):
+    def summarize(self, news:News, n_words=60, collect=False):
+        """Summarize a news article using GPT API. 
+        If collect is True, then the output is appended to the reporter's collection.
+        Parameters
+        ----------
+        news : News
+            A news object
+        n_words : int
+            Number of words to summarize to
+        collect : bool
+            Whether to collect the output in the reporter's collection
+        """
         self.text = news.text
         if self.text == "":
             return
@@ -79,10 +91,21 @@ class GPTReporter:
             model=self.model,
             response_format=self.format,
             seed=42,
-            messages=self.messages
+            messages=self.messages(n_words=n_words)
         )
         self._content = json.loads(self._response.choices[0].message.content)
         
         news._content = self._content
         news.title = news._content["title"]
         news.summary = news._content["body"]
+
+        if collect:
+            self.collection.append(news.output)
+    
+    def export(self, csv_path, episode=""):
+        """Save the reporter's collection to a csv file"""
+        assert self.collection, "Collection is empty"
+        assert episode, "Episode must be provided"
+        df = pd.DataFrame(self.collection)
+        df["Episode"] = episode
+        df.to_csv(csv_path, index=False)
