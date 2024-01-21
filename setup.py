@@ -15,6 +15,7 @@ setup(name='news',
      entry_points={ # create scripts and add to sys.PATH
         'console_scripts': [
             'generate_news = news.generate_news:main',
+            'publish_news = news.generate_news:publish'
         ],
     },
 )
