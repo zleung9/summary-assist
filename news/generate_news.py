@@ -42,7 +42,7 @@ def main():
             print(news.title)
         
         if episode:
-            reporter.export(args.file.replace(".txt", f"_EP{episode}.csv"), episode=episode)
+            reporter.export_csv(args.file.replace(".txt", f"_EP{episode}.csv"), episode=episode)
 
     elif args.url:
         news = News.from_url(args.url, summarize=args.summarize, reporter=reporter)
@@ -51,6 +51,14 @@ def main():
         print("\n" + news.url)
 
 
+def publish():
+    args = parse_args()
+    assert args.file.endswith(".csv"), "File must be a csv file"
+
+    reporter = GPTReporter("LiquidMetalClimate")
+    reporter.export_markdown(csv_path=args.file)
+
+
 if __name__ == "__main__":
-    main()
-    
+    publish()
+

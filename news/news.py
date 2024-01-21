@@ -6,7 +6,6 @@ import pandas as pd
 
 class News:
     """A news article object.
-
     Attributes:
         url (str): The URL of the news article.
         summary (str): The summary of the news article.
@@ -126,7 +125,10 @@ class GPTReporter:
 
     def __init__(self, name, api_key=""):
         self.name = name
-        self.client = OpenAI(api_key=api_key)
+        if api_key:
+            self.client = OpenAI(api_key=api_key)
+        else:
+            self.cilent = None
         self.model = "gpt-3.5-turbo-1106"
         self.format = { "type": "json_object" }
         self.text = ""
@@ -204,3 +206,47 @@ class GPTReporter:
 
         if collect:
             self.collection.append(news.output)
+
+    def export_markdown(self, collection:list=[], csv_path:str=""):
+        """
+        Publishes all the news in markdown format.
+
+        Parameters
+        ----------
+        collection : list
+            A list of dictionaries representing news articles. Default empty and the reporter's collection is used.
+            Each dictionary should at least have the following keys:
+            - "Title" : str
+                The title of the article.
+            - "Body" : str
+                The body/content of the article.
+            - "Source" : str
+                The URL/source of the article.
+        csv_path : str
+            The path to the csv file where the collection is saved by the reporter.export() method.
+
+        Returns
+        -------
+            str: The generated markdown output containing the formatted news articles.
+        """
+        if not collection:
+            collection = self.collection
+            md_path = None
+        if csv_path:
+            df = pd.read_csv(csv_path)
+            collection = df.to_dict(orient="records")
+            md_path = csv_path.replace(".csv", ".md")
+
+        markdown_output = ""
+        for entry in collection:
+            title = entry["Title"].replace("$", "\$")
+            body = entry["Body"].replace("$", "\$")
+            url = entry["Source"]
+            single_output = f"**{title}.** ([_link_]({url}))\n{body}\n\n"
+            markdown_output += single_output
+        
+        if md_path:
+            with open(md_path, "w") as f:
+                f.write(markdown_output)
+        else:
+            return markdown_output
