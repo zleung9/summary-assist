@@ -1,7 +1,10 @@
+import os
 import json
 from news.news import News, GPTReporter
 import argparse
 
+package_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(package_dir)
 
 def parse_args():
     """Parse command line arguments"""
@@ -25,7 +28,8 @@ def parse_file(file_path):
 
 def main():
     args = parse_args()
-    with open(args.config, 'r') as json_file:
+    config_path = os.path.join(root_dir, args.config)
+    with open(config_path, 'r') as json_file:
         config = json.load(json_file)
     reporter = GPTReporter("LiquidMetalClimate", api_key=config["api_key"])
 
