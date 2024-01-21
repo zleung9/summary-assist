@@ -204,3 +204,27 @@ class GPTReporter:
 
         if collect:
             self.collection.append(news.output)
+
+    def export_csv(self, csv_path, episode=""):
+            """
+            This method converts the reporter's collection into a pandas DataFrame and adds an "Episode" column with the provided episode number. The DataFrame is then saved to the specified csv file.The csv file will have the following columns:
+            "Title", "Body", "Date", "Source", "Topic", "Category", "Episode"
+
+            Parameters
+            ----------
+            csv_path : str
+                The path to the csv file where the collection will be saved.
+            episode : str, optional
+                The episode number associated with the collection. Default is an empty string.
+
+            Raises
+            ------
+            AssertionError
+                If the collection is empty or if the episode is not provided.
+
+            """
+            assert self.collection, "Collection is empty"
+            assert episode, "Episode must be provided"
+            df = pd.DataFrame(self.collection)
+            df["Episode"] = episode
+            df.to_csv(csv_path, index=False)
