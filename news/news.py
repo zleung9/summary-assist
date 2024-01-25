@@ -81,12 +81,14 @@ class News:
         article = Article(self.url)
         try:
             article.download()
-            article.parse()
         except ArticleException as e:
             self.text = ""
             self.title = "Failed to download article"
-
-        self.text = article.text
+        else:
+            article.parse()
+            self.text = article.text
+            if not self.text:
+                self.title = "Failed to parse article"
 
 
 class GPTReporter:
