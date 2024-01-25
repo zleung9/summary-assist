@@ -151,10 +151,17 @@ class GPTReporter:
             A list of prompt messages in the format of dictionaries with 'role' and 'content' keys.
         """
         prompt =  [
-            {"role": "system", "content": "You are a professional news reporter in climate tech. You are specific about numbers, and you are designed to output JSON."},
-            {"role": "user", "content": f"Here is a news article about climate tech.\n {self.text}"},
-            {"role": "user", "content": f"Please summarize the above text into fields: 'title' and 'body'. Title should be 10 words or less. Body should be {n_words} words or less."},
-            {"role": "user", "content": "Add any additional information from the original article if any."},
+            {
+                "role": "system", 
+                "content": "You are a professional news reporter. You are specific about numbers, and you are designed to output JSON. You are fluent in both English and Chinese."
+            },
+            {
+                "role": "user", 
+                "content": f"You are going to summarize an article with {n_words} words or less. The summary should go to the 'body' field of the output. You will also add a title to the summary and the title goes in the 'title' field of the output."
+            },
+            {
+                "role": "user", 
+                "content": f"Here is the article you are going to summarize: \n{self.text}"},
         ]
         return prompt
     
