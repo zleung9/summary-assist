@@ -9,11 +9,10 @@ root_dir = os.path.dirname(package_dir)
 def parse_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser()
-    parser.add_argument("-u", "--url", default="")
-    parser.add_argument("-f", "--file", default="")
-    parser.add_argument("-s", "--summarize", default=True)
-    parser.add_argument("-c", "--config", default="config.json")
-    parser.add_argument("-n", "--num_words", default=60)
+    parser.add_argument("-u", "--url", default="", help="URL of the news article")
+    parser.add_argument("-f", "--file", default="", help="Path to the file containing a list of URLs")
+    parser.add_argument("-s", "--summarize", default=True, help="Flag indicating whether to summarize the news article. Default is True")
+    parser.add_argument("-n", "--num_words", default=60, help="Number of words to include in the summary")
     args = parser.parse_args()
     return args
 
