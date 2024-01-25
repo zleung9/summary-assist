@@ -23,6 +23,16 @@ class TestGPTReporter(unittest.TestCase):
         self.reporter.summarize(self.news)
         self.assertEqual(self.news.summary, "")
 
+    def test_publish_markdown(self):
+        self.news.title = "Test Test Test Title"
+        self.news.url = "Test URL"
+        self.news.summary = "Test Test Test Test Test Summary"
+        self.assertEqual(
+            self.reporter.publish_markdown([self.news.output]),
+            "**Test Test Test Title** ([_link_](Test URL))\n"
+            "Test Test Test Test Test Summary\n\n"
+        )
+
 
 class TestNews(unittest.TestCase):
     

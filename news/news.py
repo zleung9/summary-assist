@@ -6,7 +6,6 @@ import pandas as pd
 
 class News:
     """A news article object.
-
     Attributes:
         url (str): The URL of the news article.
         summary (str): The summary of the news article.
@@ -82,12 +81,14 @@ class News:
         article = Article(self.url)
         try:
             article.download()
-            article.parse()
         except ArticleException as e:
             self.text = ""
             self.title = "Failed to download article"
-
-        self.text = article.text
+        else:
+            article.parse()
+            self.text = article.text
+            if not self.text:
+                self.title = "Failed to parse article"
 
 
 class GPTReporter:
@@ -126,7 +127,10 @@ class GPTReporter:
 
     def __init__(self, name, api_key=""):
         self.name = name
-        self.client = OpenAI(api_key=api_key)
+        if api_key:
+            self.client = OpenAI(api_key=api_key)
+        else:
+            self.cilent = None
         self.model = "gpt-3.5-turbo-1106"
         self.format = { "type": "json_object" }
         self.text = ""
@@ -149,10 +153,17 @@ class GPTReporter:
             A list of prompt messages in the format of dictionaries with 'role' and 'content' keys.
         """
         prompt =  [
-            {"role": "system", "content": "You are a professional news reporter in climate tech. You are specific about numbers, and you are designed to output JSON."},
-            {"role": "user", "content": f"Here is a news article about climate tech.\n {self.text}"},
-            {"role": "user", "content": f"Please summarize the above text into fields: 'title' and 'body'. Title should be 10 words or less. Body should be {n_words} words or less."},
-            {"role": "user", "content": "Add any additional information from the original article if any."},
+            {
+                "role": "system", 
+                "content": "You are a professional news reporter. You are specific about numbers, and you are designed to output JSON. You are fluent in both English and Chinese."
+            },
+            {
+                "role": "user", 
+                "content": f"You are going to summarize an article with {n_words} words or less. The summary should go to the 'body' field of the output. You will also add a title to the summary and the title goes in the 'title' field of the output."
+            },
+            {
+                "role": "user", 
+                "content": f"Here is the article you are going to summarize: \n{self.text}"},
         ]
         return prompt
     
@@ -204,3 +215,71 @@ class GPTReporter:
 
         if collect:
             self.collection.append(news.output)
+
+    def export_csv(self, csv_path, episode=""):
+            """
+            This method converts the reporter's collection into a pandas DataFrame and adds an "Episode" column with the provided episode number. The DataFrame is then saved to the specified csv file.The csv file will have the following columns:
+            "Title", "Body", "Date", "Source", "Topic", "Category", "Episode"
+
+            Parameters
+            ----------
+            csv_path : str
+                The path to the csv file where the collection will be saved.
+            episode : str, optional
+                The episode number associated with the collection. Default is an empty string.
+
+            Raises
+            ------
+            AssertionError
+                If the collection is empty or if the episode is not provided.
+
+            """
+            assert self.collection, "Collection is empty"
+            assert episode, "Episode must be provided"
+            df = pd.DataFrame(self.collection)
+            df["Episode"] = episode
+            df.to_csv(csv_path, index=False)
+
+    def export_markdown(self, collection:list=[], csv_path:str=""):
+        """
+        Publishes all the news in markdown format.
+
+        Parameters
+        ----------
+        collection : list
+            A list of dictionaries representing news articles. Default empty and the reporter's collection is used.
+            Each dictionary should at least have the following keys:
+            - "Title" : str
+                The title of the article.
+            - "Body" : str
+                The body/content of the article.
+            - "Source" : str
+                The URL/source of the article.
+        csv_path : str
+            The path to the csv file where the collection is saved by the reporter.export() method.
+
+        Returns
+        -------
+            str: The generated markdown output containing the formatted news articles.
+        """
+        if not collection:
+            collection = self.collection
+            md_path = None
+        if csv_path:
+            df = pd.read_csv(csv_path)
+            collection = df.to_dict(orient="records")
+            md_path = csv_path.replace(".csv", ".md")
+
+        markdown_output = ""
+        for entry in collection:
+            title = entry["Title"].replace("$", "\$")
+            body = entry["Body"].replace("$", "\$")
+            url = entry["Source"]
+            single_output = f"**{title}.** ([_link_]({url}))\n{body}\n\n"
+            markdown_output += single_output
+        
+        if md_path:
+            with open(md_path, "w") as f:
+                f.write(markdown_output)
+        else:
+            return markdown_output
