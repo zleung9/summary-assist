@@ -25,14 +25,22 @@ def parse_file(file_path):
         urls = ["http" + a.strip() for a in urls_raw.split("http") if a.strip()]
     return urls
 
+def check_openai_api_key():
+    """Check if OpenAI API key is set"""
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise Exception(
+            "Please set your OPENAI_API_KEY environment variable: export $OPENAI_API_KEY=<your key>"
+            "\nOr add it to a .env file in the root directory of this project."
+        )
+    else:
+        return openai_api_key
 
 def main():
+    openai_api_key = check_openai_api_key()
     args = parse_args()
-    config_path = os.path.join(root_dir, args.config)
-    with open(config_path, 'r') as json_file:
-        config = json.load(json_file)
-    reporter = GPTReporter("LiquidMetalClimate", api_key=config["api_key"])
 
+    reporter = GPTReporter("LiquidMetalClimate", api_key=openai_api_key)
     if args.file:
         # save collection to file
         episode = input(
