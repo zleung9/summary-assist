@@ -1,24 +1,25 @@
-### Installation
+# Installation
 
 Clone the git repository to your local computer.
 ```
 >>> git clone git@github.com:zleung9/summary-assist.git
 ```
-Enter the local rerpository and install it in the developer mode (for developers)
+Enter the local rerpository and install it in the developer mode. 
 ```
 >>> pip install -e .
 ```
 
 
-### API key
+# API key
 Before using this tool. Please set your OPENAI_API_KEY environment variable:
 ```
 >>> export OPENAI_API_KEY=<your_key>
 ```
 
-### Getting started
+# Getting started
 
-__Single mode__. Running the command below. 
+### Single mode
+Run the command below. 
 ```
  >>> generate_news -u "Your url for the news page"
  ```
@@ -38,31 +39,32 @@ Enovix and Group14 Technologies are collaborating to develop a silicon battery u
 https://batteryindustry.tech/enovix-and-group14-announce-collaboration-to-develop-best-in-class-silicon-batteries-2/
 ```
 
-__Batch mode.__ Create a text file and place all the urls into the file. Each url should occupy one line. Then run the following command. The result will be stored in a csv file with the same name.
+### Batch mode
+Create a text file and place all the urls into the file. Each url should occupy one line. Then run the following command. The result will be stored in a csv file with the same name.
 
-```
->>> generate_news -f "path_to_the_file"
-```
 Example: 
 ```
 >>> generate_news -f "file_with_urls.txt"
 ```
 Output will be stored in a `file_with_urls.csv` in the same folder.
 
-__publish.__ Convert the content in the `csv` file into Markdown file and get ready to publish to web.
+### publish
+Convert the content in the `csv` file into Markdown file and get ready to publish to web.
 
 Example: 
 ```
 >>> publish_news -f "file_with_urls.csv"
 ```
 Output will be stored in a `file_with_urls.md` in the same folder.
-Or you could add `-p` flag to publish directly:
+
+Or you could add `-p` flag to publish to Markdown directly:
 ```
 >>> generate_news -f "file_with_urls.txt" -p
 ```
 
 
-__Options.__ type `generate_news -h` for more options.
+### Options
+type `generate_news -h` for more options.
 ```
 -h, --help            show this help message and exit
 -u URL, --url URL     URL of the news article
