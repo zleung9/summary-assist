@@ -39,7 +39,9 @@ def check_openai_api_key():
 
 
 def publish():
-    args = parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", default="", help="Path to the generated csv file.")
+    args = parser.parse_args()
     assert args.file.endswith(".csv"), "File must be a csv file"
 
     reporter = GPTReporter("LiquidMetalClimate")
@@ -64,7 +66,7 @@ def main():
             print(news.title)
         
         suffix = f"_EP{episode}" if episode else ""
-        file_name = args.file.replace(".txt", f"{suffix}.json")
+        file_name = args.file.replace(".txt", f"{suffix}.csv")
         reporter.export_csv(file_name, episode=episode)
 
         if args.publish:

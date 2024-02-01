@@ -155,7 +155,7 @@ class GPTReporter:
         prompt =  [
             {
                 "role": "system", 
-                "content": "You are a professional news reporter. You are specific about numbers, and you are designed to output JSON. You are fluent in both English and Chinese."
+                "content": "You are a professional news reporter. You are specific about numbers, and you are designed to output JSON."
             },
             {
                 "role": "user", 
