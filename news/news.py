@@ -3,7 +3,7 @@ from newspaper import Article
 from newspaper.article import ArticleException
 from openai import OpenAI
 import pandas as pd
-from news.prompts import prompt_for_summary
+from news.prompts import prompt_summary, prompt_short_summary
 
 class News:
     """A news article object.
@@ -144,7 +144,7 @@ class GPTReporter:
         self.collection = []
     
 
-    def generate_response(self, text, prompt=None, seed=42):
+    def generate_response(self, message=None, seed=42):
         """Summarize a news article using GPT API. 
         If collect is True, then the output is appended to the reporter's collection.
         Parameters
@@ -156,16 +156,14 @@ class GPTReporter:
         collect : bool
             Whether to collect the output in the reporter's collection
         """
-        try:
-            prompt = prompt(text)
-        except:
-            prompt = [{"role": "user", "content": "Summarize the news article."}]
+        if not message:
+            message = [{"role": "user", "content": "Summarize the news article."}]
  
         self._response = self.client.chat.completions.create(
             model=self.model,
             response_format=self.format,
             seed=seed,
-            messages=prompt
+            messages=message
         )
         self._content = json.loads(self._response.choices[0].message.content)
         return self._content
@@ -182,18 +180,20 @@ class GPTReporter:
         """
         if news.text == "":
             return
-        # long_summary is a json that has： "title", "summary" and "country"
-        self._content = self.generate_response(news.text, prompt_for_summary, seed=seed)
+        
+        self.text = news.text
+        self._content = self.generate_response(prompt_summary(news.text, n_words=200), seed=seed)
         news.title = self._content["title"]
         news.summary = self._content["summary"]
         news.country = self._content["country"]
-        news.body = self._content["body"]
         news.investors = self._content["investors"]
         news.company = self._content["company"]
-        # self._content_short = self.generate_response(news.summary, prompt_for_short_summary)
-        # news.body = self._content_short
+        if len(news.summary.split()) < 60:
+            news.body = news.summary
+        else:
+            self._content_short = self.generate_response(prompt_short_summary(news.summary, n_words=50), seed=seed)
+            news.body = self._content_short["summary"]
         
-        self.text = news.text
 
         if collect:
             self.collection.append(news.output)
