@@ -22,7 +22,7 @@ def parse_file(file_path):
     """Parse a file of urls into a list of urls"""
     with open(file_path, "r") as f:
         urls_raw = f.read()
-        urls = ["http" + a.strip() for a in urls_raw.split("http") if a.strip()]
+        urls = ["http" + a.strip() for a in urls_raw.split("http") if a.strip() and not a.startswith("#")]
     return urls
 
 def check_openai_api_key():

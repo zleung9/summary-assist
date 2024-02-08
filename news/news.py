@@ -78,17 +78,23 @@ class News:
         Note: Make sure to set the `url` attribute of the object before calling this method.
 
         """
+        root_domain = self.url.split('/')[2]
         article = Article(self.url)
         try:
             article.download()
         except ArticleException as e:
             self.text = ""
-            self.title = "Failed to download article"
+            self.title = f"Failed to download article: {root_domain}"
         else:
-            article.parse()
-            self.text = article.text
-            if not self.text:
-                self.title = "Failed to parse article"
+            try:
+                article.parse()
+            except ArticleException as e:
+                self.text = ""
+                self.title = f"Failed to parse article: {root_domain}"
+            else:
+                self.text = article.text
+                if not self.text:
+                    self.title = f"Article text is empty: {root_domain}"
 
 
 class GPTReporter:
