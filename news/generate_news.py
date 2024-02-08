@@ -73,12 +73,13 @@ def main():
             reporter.export_markdown(csv_path=file_name)
 
     elif args.url:
-        news = News.from_url(args.url, summarize=args.summarize, reporter=reporter)
+        news = News.from_url(args.url, summarize=False, reporter=reporter)
+        # reporter.generate_response(news.text)
+        print("\n" + news.text)
         print("\n" + news.title)
+        print("\n" + news.body)
         print("\n" + news.summary)
         print("\n" + news.url)
 
-
 if __name__ == "__main__":
-    publish()
-
+    pass

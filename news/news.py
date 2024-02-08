@@ -3,6 +3,7 @@ from newspaper import Article
 from newspaper.article import ArticleException
 from openai import OpenAI
 import pandas as pd
+from news.prompts import prompt_for_long_summary, prompt_for_short_summary
 
 class News:
     """A news article object.
@@ -18,7 +19,8 @@ class News:
 
     def __init__(self):
         self.url = ""  # url of news
-        self.summary = ""  # summary of news
+        self.summary = ""  # long summary of news
+        self.body = ""  # short summary of news
         self.title = ""  # title of news
         self.date = ""  # date of news
         self.text = ""  # full text of the article
@@ -29,7 +31,7 @@ class News:
     def output(self):
         return {
             "Title": self.title,
-            "Body": self.summary,
+            "Body": self.body,
             "Date": self.date,
             "Source": self.url,
             "Topic": self.tags,
@@ -137,84 +139,60 @@ class GPTReporter:
         self._response = None
         self._content = None
         self.collection = []
-
-    def messages(self, n_words=60):
-        """
-        Generates a list of prompt messages for summarizing a news article.
-
-        Parameters:
-        ----------
-        n_words : int
-            Number of words to summarize to
-
-        Returns:
-        ----------
-        list
-            A list of prompt messages in the format of dictionaries with 'role' and 'content' keys.
-        """
-        prompt =  [
-            {
-                "role": "system", 
-                "content": "You are a professional news reporter. You are specific about numbers, and you are designed to output JSON."
-            },
-            {
-                "role": "user", 
-                "content": f"You are going to summarize an article with {n_words} words or less. The summary should go to the 'body' field of the output. You will also add a title to the summary and the title goes in the 'title' field of the output."
-            },
-            {
-                "role": "user", 
-                "content": f"Here is the article you are going to summarize: \n{self.text}"},
-        ]
-        return prompt
-    
-    def generate_response(self, *args, **kwargs):
-        """
-        Generates a response using the GPT API.
-
-        Parameters:
-        ----------
-        *args : list
-            Positional arguments to pass to the GPT API.
-        **kwargs : dict
-            Keyword arguments to pass to the GPT API.
-
-        Returns:
-        ----------
-        object
-            The response object from the GPT API.
-        """
-        return self.client.chat.completions.create(*args, **kwargs)
     
 
-    def summarize(self, news:News, n_words=60, collect=False):
+    def generate_response(self, text, prompt=None):
         """Summarize a news article using GPT API. 
         If collect is True, then the output is appended to the reporter's collection.
         Parameters
         ----------
-        news : News
-            A news object
+        text : News
+            text of the news article to summarize
         n_words : int
             Number of words to summarize to
         collect : bool
             Whether to collect the output in the reporter's collection
         """
-        self.text = news.text
-        if self.text == "":
-            return
-        self._response = self.generate_response(
+        try:
+            prompt = prompt(text)
+        except:
+            prompt = "Summarize the news article."
+ 
+        self._response = self.client.chat.completions.create(
             model=self.model,
             response_format=self.format,
             seed=42,
-            messages=self.messages(n_words=n_words)
+            messages=prompt
         )
         self._content = json.loads(self._response.choices[0].message.content)
-        
-        news._content = self._content
+        return self._content
+
+
+    def summarize(self, news: News, collect=False):
+        """Summarize a news article using GPT API.
+        Parameters
+        ----------
+        news : News
+            The news article to summarize.
+        collect : bool
+            Whether to collect the output in the reporter's collection.
+        """
+        if news.text == "":
+            return
+        # long_summary is a json that has： "title", "summary" and "country"
+        self._content_long = self.generate_response(news.text, prompt_for_long_summary)
+        news._content = self._content_long
         news.title = news._content["title"]
-        news.summary = news._content["body"]
+        news.summary = news._content["summary"]
+
+        self._content_short = self.generate_response(news.summary, prompt_for_short_summary)
+        news.body = self._content_short
+        
+        self.text = news.text
 
         if collect:
             self.collection.append(news.output)
+
 
     def export_csv(self, csv_path, episode=""):
             """
