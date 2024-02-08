@@ -11,9 +11,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--url", default="", help="URL of the news article")
     parser.add_argument("-f", "--file", default="", help="Path to the file containing a list of URLs")
-    parser.add_argument("-s", "--summarize", default=True, action="store_true", help="Flag indicating whether to summarize the news article. Default is True")
+    parser.add_argument("-z", "--summarize", default=True, action="store_true", help="Flag indicating whether to summarize the news article. Default is True")
     parser.add_argument("-p", "--publish", default=False, action="store_true", help="Flag indicating whether to publish the news article. Default is False")
     parser.add_argument("-n", "--num_words", default=60, help="Number of words to include in the summary")
+    parser.add_argument("-s", "--seed", default=42, help="Seed for the random number generator. Default is 42.")
     args = parser.parse_args()
     return args
 
@@ -73,13 +74,15 @@ def main():
             reporter.export_markdown(csv_path=file_name)
 
     elif args.url:
-        news = News.from_url(args.url, summarize=False, reporter=reporter)
+        news = News.from_url(args.url, summarize=args.summarize, reporter=reporter)
         # reporter.generate_response(news.text)
-        print("\n" + news.text)
-        print("\n" + news.title)
-        print("\n" + news.body)
-        print("\n" + news.summary)
-        print("\n" + news.url)
+        print(f"\nTitle: {news.title}")
+        print(f"\nCompany: {news.company}")
+        print(f"\nInvestors: {news.investors}")
+        print(f"\nBody: {news.body}")
+        print(f"\nSummary:{news.summary}")
+        print(f"\nCountry: {news.country}")
+        print(f"\nURL: {news.url}")
 
 if __name__ == "__main__":
     pass

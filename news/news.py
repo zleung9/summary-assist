@@ -3,7 +3,7 @@ from newspaper import Article
 from newspaper.article import ArticleException
 from openai import OpenAI
 import pandas as pd
-from news.prompts import prompt_for_long_summary, prompt_for_short_summary
+from news.prompts import prompt_for_summary
 
 class News:
     """A news article object.
@@ -26,6 +26,9 @@ class News:
         self.text = ""  # full text of the article
         self.tags = ""  # tags of the article
         self.category = ""  # category of the article
+        self.country = ""  # country where the news occurred
+        self.investors = [] # investors involved in the news
+        self.company = ""  # main company the news is about
 
     @property
     def output(self):
@@ -141,7 +144,7 @@ class GPTReporter:
         self.collection = []
     
 
-    def generate_response(self, text, prompt=None):
+    def generate_response(self, text, prompt=None, seed=42):
         """Summarize a news article using GPT API. 
         If collect is True, then the output is appended to the reporter's collection.
         Parameters
@@ -156,19 +159,19 @@ class GPTReporter:
         try:
             prompt = prompt(text)
         except:
-            prompt = "Summarize the news article."
+            prompt = [{"role": "user", "content": "Summarize the news article."}]
  
         self._response = self.client.chat.completions.create(
             model=self.model,
             response_format=self.format,
-            seed=42,
+            seed=seed,
             messages=prompt
         )
         self._content = json.loads(self._response.choices[0].message.content)
         return self._content
 
 
-    def summarize(self, news: News, collect=False):
+    def summarize(self, news: News, collect=False, seed=42):
         """Summarize a news article using GPT API.
         Parameters
         ----------
@@ -180,13 +183,15 @@ class GPTReporter:
         if news.text == "":
             return
         # long_summary is a json that has： "title", "summary" and "country"
-        self._content_long = self.generate_response(news.text, prompt_for_long_summary)
-        news._content = self._content_long
-        news.title = news._content["title"]
-        news.summary = news._content["summary"]
-
-        self._content_short = self.generate_response(news.summary, prompt_for_short_summary)
-        news.body = self._content_short
+        self._content = self.generate_response(news.text, prompt_for_summary, seed=seed)
+        news.title = self._content["title"]
+        news.summary = self._content["summary"]
+        news.country = self._content["country"]
+        news.body = self._content["body"]
+        news.investors = self._content["investors"]
+        news.company = self._content["company"]
+        # self._content_short = self.generate_response(news.summary, prompt_for_short_summary)
+        # news.body = self._content_short
         
         self.text = news.text
 
