@@ -10,7 +10,8 @@ setup(name='news',
          'whisper',
          'pydub',
          "numpy",
-         "newspaper3k"
+         "newspaper3k",
+         "scrapy"
      ],
      entry_points={ # create scripts and add to sys.PATH
         'console_scripts': [
