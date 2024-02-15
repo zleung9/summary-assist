@@ -13,7 +13,6 @@ def parse_args():
     parser.add_argument("-f", "--file", default="", help="Path to the file containing a list of URLs")
     parser.add_argument("-z", "--summarize", default=True, action="store_true", help="Flag indicating whether to summarize the news article. Default is True")
     parser.add_argument("-p", "--publish", default=False, action="store_true", help="Flag indicating whether to publish the news article. Default is False")
-    parser.add_argument("-n", "--num_words", default=60, help="Number of words to include in the summary")
     parser.add_argument("-s", "--seed", default=42, help="Seed for the random number generator. Default is 42.")
     args = parser.parse_args()
     return args
@@ -63,7 +62,7 @@ def main():
         for url in parse_file(args.file):
             if url == "\n": continue
             news = News.from_url(url, summarize=False)
-            reporter.summarize(news, n_words=args.num_words, collect=True)
+            reporter.summarize(news, collect=True)
             print(news.title)
         
         suffix = f"_EP{episode}" if episode else ""

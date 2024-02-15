@@ -53,7 +53,7 @@ def prompt_summary(text, n_words=200):
         return prompt
 
 
-def prompt_short_summary(text, n_words=200):
+def prompt_short_summary(text, n_words=60):
         """
         Provide a group of prompt messages for generating a long summary for a news article.
 
@@ -94,3 +94,44 @@ def prompt_short_summary(text, n_words=200):
             },
         ]
         return prompt
+
+def prompt_translate_Chinese(text):
+    """
+    Provide a group of prompt messages for translating a Chinese text to English.
+
+    Returns:
+    ----------
+    list
+        A list of prompt messages in the format of dictionaries with 'role' and 'content' keys.
+
+    Notes:
+    ------
+    The prompt messages are designed to generate JSON output.
+    """
+    prompt =  [
+        {
+            "role": "system", 
+            "content": f"You are an expert news reporter. You are both fluent in Chinese and English. "
+        },
+        {
+            "role": "user",
+            "content": f"Please translate the following news into Chinese. Names (such as company, person, location, etc) stay in its original language. Translation should conform to Chinese writing habits." 
+        },
+        {
+            "role": "user",
+            "content": f"You are provided with some text in the form of Markdown. Please translate them into Chinese while maintaining the Markdown style. Also remove the link, instead extract the website name from the link information and attached to the end of each paragraph." 
+        },
+        {
+            "role": "assistant",
+            "content": f"Here is an example:\n**CATL Introduces New LFP Batteries.** (*[link](https://www.nextbigfuture.com/2024/01/ev-lfp-battery-price-war-w-55-in-six-months.html)*)\nCATL's new rectangular LFP batteries aim to reach a price of less than $56 per kWh within six months, significantly reducing the current price of $70 per kWh in China. With efforts from China's EV makers, the price is expected to drop to as low as $36 per kWh by next year. Tesla is also projected to save $2000 in battery costs compared to last year.\nThe translated version is: \n**CATL推出新型LFP电池。**\nCATL的新型矩形LFP电池旨在在六个月内达到低于每千瓦时56美元的价格, 显著降低中国目前每千瓦时70美元的价格。在中国电动汽车制造商的努力下, 预计价格将在明年降至低至每千瓦时36美元。特斯拉预计与去年相比可节省2000美元的电池成本。(source: nextbigfuture)"      
+        },
+        {
+            "role": "assistant",
+            "content": f"Here is another example:\n**NREL Simulates Sustainable Aviation Fuel Combustion for Industry Support.** ([_link_](https://www.nrel.gov/news/features/2024/on-the-ground-in-colorado-nrel-is-simulating-sustainable-aviation-fuel-combustion-during-flight.html))\n The National Renewable Energy Laboratory (NREL) is supporting the aviation industry in fine-tuning sustainable aviation fuel (SAF) chemistry, crucial for decarbonizing flight. NREL's computational science center is simulating detailed SAF combustion in a 'virtual jet engine,' aiming to provide insights for optimizing safety and performance. This effort may accelerate SAF production and usage, potentially reshaping jet fuel chemistry in the industry.\nThe translated version is:\nNREL模拟支持可持续航空燃料燃烧。\n美国国家可再生能源实验室(NREL)正在支持航空业调优可持续航空燃料(SAF)化学成分,这对于减少飞行碳排放至关重要。NREL的计算科学中心正在模拟详细的SAF燃烧过程,利用“虚拟喷气发动机”,旨在提供有关优化安全性和性能的见解。这一努力可能加速SAF的生产和使用,潜在地重塑行业的喷气燃料化学成分。(source: nrel.gov)" 
+        },
+        {
+            "role": "user",
+            "content": f"Here is the news you will tranlate: {text}"
+        }
+    ]
+    return prompt
