@@ -25,17 +25,23 @@ def parse_file(file_path):
         urls = ["http" + a.strip() for a in urls_raw.split("http") if a.strip() and not a.startswith("#")]
     return urls
 
-def check_openai_api_key():
-    """Check if OpenAI API key is set"""
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
+
+def check_api_key(api_env_var: str="OPENAI_API_KEY"):
+    """Check if API key is set
+    Parameters
+    ----------
+    api_provider : str
+        The name of the API provider: openai, google.
+    """
+
+    api_key = os.getenv(api_env_var)
+    if not api_key:
         raise Exception(
-            "Please set your OPENAI_API_KEY environment variable: export $OPENAI_API_KEY=<your key>"
+            f"Please set your {api_env_var} environment variable: export ${api_env_var}=<your key>"
             "\nOr add it to a .env file in the root directory of this project."
         )
     else:
-        return openai_api_key
-
+        return api_key
 
 
 def publish():
