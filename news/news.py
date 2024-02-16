@@ -87,6 +87,7 @@ class News:
         Note: Make sure to set the `url` attribute of the object before calling this method.
 
         """
+        root_domain = self.url.split('/')[2]
         article = Article(self.url)
         try:
             article.download()

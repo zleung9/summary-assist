@@ -13,6 +13,7 @@ setup(name='news',
          "newspaper3k",
          "google-generativeai"
          "notion-client"
+         "scrapy"
      ],
      entry_points={ # create scripts and add to sys.PATH
         'console_scripts': [
