@@ -12,6 +12,7 @@ setup(name='news',
          "numpy",
          "newspaper3k",
          "google-generativeai"
+         "notion-client"
      ],
      entry_points={ # create scripts and add to sys.PATH
         'console_scripts': [
