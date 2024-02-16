@@ -47,6 +47,15 @@ def publish():
     reporter = GPTReporter("LiquidMetalClimate")
     reporter.export_markdown(csv_path=args.file)
 
+def translate():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", default="", help="Path to the generated md file.")
+    args = parser.parse_args()
+    assert args.file.endswith(".md"), "File must be a md file"
+    
+    reporter = GPTReporter("LiquidMetalClimate", api_key=check_openai_api_key())
+    reporter.translate(md_path=args.file)
+
 
 def main():
     openai_api_key = check_openai_api_key()

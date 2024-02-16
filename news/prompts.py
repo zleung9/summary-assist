@@ -95,6 +95,7 @@ def prompt_short_summary(text, n_words=60):
         ]
         return prompt
 
+
 def prompt_translate_Chinese(text):
     """
     Provide a group of prompt messages for translating a Chinese text to English.
@@ -111,15 +112,23 @@ def prompt_translate_Chinese(text):
     prompt =  [
         {
             "role": "system", 
-            "content": f"You are an expert news reporter. You are both fluent in Chinese and English. "
+            "content": f"You are an expert news reporter. You are both fluent in Chinese and English. You are designed to take Markdown format as input and output a json format. The 'news' field in the json output is a list of translated news, each news has three field: 'title', 'content' and 'source'."
         },
         {
             "role": "user",
-            "content": f"Please translate the following news into Chinese. Names (such as company, person, location, etc) stay in its original language. Translation should conform to Chinese writing habits." 
+            "content": "You are provided with some text in the form of Markdown. Please translate them into Chinese while maintaining the Markdown style. Let's to it step by step:Also remove the link, instead extract the root url from the link and attached to the end of each paragraph." 
         },
         {
             "role": "user",
-            "content": f"You are provided with some text in the form of Markdown. Please translate them into Chinese while maintaining the Markdown style. Also remove the link, instead extract the website name from the link information and attached to the end of each paragraph." 
+            "content": "Step 1, translate the contained text and leave the link as is. Put the main text in the 'content' field."
+        },
+        {
+            "role": "user",
+            "content": "Step 2, Make the title bold type in Markdown, and put it in the 'title' field."
+        },
+        {
+            "role": "user",
+            "content": "Step 3, Extract root url from the link and put it in the 'source' field."
         },
         {
             "role": "assistant",
@@ -131,7 +140,7 @@ def prompt_translate_Chinese(text):
         },
         {
             "role": "user",
-            "content": f"Here is the news you will tranlate: {text}"
+            "content": f"Please translate the following news into Chinese. Names (such as company, person, location, etc) stay in its original language. Translation should conform to Chinese writing habits.\n\n{text}"
         }
     ]
     return prompt

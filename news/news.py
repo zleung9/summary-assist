@@ -3,7 +3,11 @@ from newspaper import Article
 from newspaper.article import ArticleException
 from openai import OpenAI
 import pandas as pd
-from news.prompts import prompt_summary, prompt_short_summary
+from news.prompts import (
+    prompt_summary, 
+    prompt_short_summary,
+    prompt_translate_Chinese
+)
 
 class News:
     """A news article object.
@@ -87,13 +91,20 @@ class News:
         try:
             article.download()
         except ArticleException as e:
-            self.text = ""
+            self.text = str(e)
             self.title = "Failed to download article"
-        else:
+            return
+        
+        try:
             article.parse()
-            self.text = article.text
-            if not self.text:
-                self.title = "Failed to parse article"
+        except ArticleException as e:
+            self.text = str(e)
+            self.title = "Failed to parse article"
+            return
+        
+        self.text = article.text
+        if not self.text:
+            self.title = "Failed to parse article"
 
 
 class GPTReporter:
@@ -135,7 +146,7 @@ class GPTReporter:
         if api_key:
             self.client = OpenAI(api_key=api_key)
         else:
-            self.cilent = None
+            self.client = None
         self.model = "gpt-3.5-turbo-1106"
         self.format = { "type": "json_object" }
         self.text = ""
@@ -200,28 +211,28 @@ class GPTReporter:
 
 
     def export_csv(self, csv_path, episode=""):
-            """
-            This method converts the reporter's collection into a pandas DataFrame and adds an "Episode" column with the provided episode number. The DataFrame is then saved to the specified csv file.The csv file will have the following columns:
-            "Title", "Body", "Date", "Source", "Topic", "Category", "Episode"
+        """
+        This method converts the reporter's collection into a pandas DataFrame and adds an "Episode" column with the provided episode number. The DataFrame is then saved to the specified csv file.The csv file will have the following columns:
+        "Title", "Body", "Date", "Source", "Topic", "Category", "Episode"
 
-            Parameters
-            ----------
-            csv_path : str
-                The path to the csv file where the collection will be saved.
-            episode : str, optional
-                The episode number associated with the collection. Default is an empty string.
+        Parameters
+        ----------
+        csv_path : str
+            The path to the csv file where the collection will be saved.
+        episode : str, optional
+            The episode number associated with the collection. Default is an empty string.
 
-            Raises
-            ------
-            AssertionError
-                If the collection is empty or if the episode is not provided.
+        Raises
+        ------
+        AssertionError
+            If the collection is empty or if the episode is not provided.
 
-            """
-            assert self.collection, "Collection is empty"
-            assert episode, "Episode must be provided"
-            df = pd.DataFrame(self.collection)
-            df["Episode"] = episode
-            df.to_csv(csv_path, index=False)
+        """
+        assert self.collection, "Collection is empty"
+        assert episode, "Episode must be provided"
+        df = pd.DataFrame(self.collection)
+        df["Episode"] = episode
+        df.to_csv(csv_path, index=False)
 
     def export_markdown(self, collection:list=[], csv_path:str=""):
         """
@@ -266,3 +277,25 @@ class GPTReporter:
                 f.write(markdown_output)
         else:
             return markdown_output
+        
+    
+    def translate(self, md_path:str):
+        """Translate the markdown file to Chinese.
+        """
+        with open(md_path, "r") as f:
+            text = f.read()
+        message = prompt_translate_Chinese(text)
+        content = self.generate_response(message)
+        assert "news" in content, "The output does not contain the 'news' field."
+
+        markdown_output = ""
+        for entry in content["news"]:
+            title = entry["title"].strip("**")
+            body = entry["content"]
+            source = entry["source"]
+            single_output = f"**{title}.**\n{body}(source: {source})\n\n"
+            markdown_output += single_output
+        
+        with open(md_path.replace(".md", "_zh.md"), "w") as f:
+            f.write(markdown_output)
+
