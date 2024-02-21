@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='news',
-      version='1.2.1',
+      version='1.2.2',
       description="Fetch and summarize news articles",
       license='See license',
       packages=find_packages(),
@@ -10,12 +10,16 @@ setup(name='news',
          'whisper',
          'pydub',
          "numpy",
-         "newspaper3k"
+         "newspaper3k",
+         "google-generativeai"
+         "notion-client"
+         "scrapy"
      ],
      entry_points={ # create scripts and add to sys.PATH
         'console_scripts': [
             'generate_news = news.generate_news:main',
-            'publish_news = news.generate_news:publish'
+            'publish_news = news.generate_news:publish',
+            'translate_news = news.generate_news:translate'
         ],
     },
 )

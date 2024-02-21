@@ -3,6 +3,11 @@ from newspaper import Article
 from newspaper.article import ArticleException
 from openai import OpenAI
 import pandas as pd
+from news.prompts import (
+    prompt_summary, 
+    prompt_short_summary,
+    prompt_translate_Chinese
+)
 
 class News:
     """A news article object.
@@ -18,18 +23,22 @@ class News:
 
     def __init__(self):
         self.url = ""  # url of news
-        self.summary = ""  # summary of news
+        self.summary = ""  # long summary of news
+        self.body = ""  # short summary of news
         self.title = ""  # title of news
         self.date = ""  # date of news
         self.text = ""  # full text of the article
         self.tags = ""  # tags of the article
         self.category = ""  # category of the article
+        self.country = ""  # country where the news occurred
+        self.investors = [] # investors involved in the news
+        self.company = ""  # main company the news is about
 
     @property
     def output(self):
         return {
             "Title": self.title,
-            "Body": self.summary,
+            "Body": self.body,
             "Date": self.date,
             "Source": self.url,
             "Topic": self.tags,
@@ -78,17 +87,25 @@ class News:
         Note: Make sure to set the `url` attribute of the object before calling this method.
 
         """
+        root_domain = self.url.split('/')[2]
         article = Article(self.url)
         try:
             article.download()
         except ArticleException as e:
-            self.text = ""
+            self.text = str(e)
             self.title = "Failed to download article"
-        else:
+            return
+        
+        try:
             article.parse()
-            self.text = article.text
-            if not self.text:
-                self.title = "Failed to parse article"
+        except ArticleException as e:
+            self.text = str(e)
+            self.title = "Failed to parse article"
+            return
+        
+        self.text = article.text
+        if not self.text:
+            self.title = "Failed to parse article"
 
 
 class GPTReporter:
@@ -130,115 +147,93 @@ class GPTReporter:
         if api_key:
             self.client = OpenAI(api_key=api_key)
         else:
-            self.cilent = None
+            self.client = None
         self.model = "gpt-3.5-turbo-1106"
         self.format = { "type": "json_object" }
         self.text = ""
         self._response = None
         self._content = None
         self.collection = []
-
-    def messages(self, n_words=60):
-        """
-        Generates a list of prompt messages for summarizing a news article.
-
-        Parameters:
-        ----------
-        n_words : int
-            Number of words to summarize to
-
-        Returns:
-        ----------
-        list
-            A list of prompt messages in the format of dictionaries with 'role' and 'content' keys.
-        """
-        prompt =  [
-            {
-                "role": "system", 
-                "content": "You are a professional news reporter. You are specific about numbers, and you are designed to output JSON."
-            },
-            {
-                "role": "user", 
-                "content": f"You are going to summarize an article with {n_words} words or less. The summary should go to the 'body' field of the output. You will also add a title to the summary and the title goes in the 'title' field of the output."
-            },
-            {
-                "role": "user", 
-                "content": f"Here is the article you are going to summarize: \n{self.text}"},
-        ]
-        return prompt
-    
-    def generate_response(self, *args, **kwargs):
-        """
-        Generates a response using the GPT API.
-
-        Parameters:
-        ----------
-        *args : list
-            Positional arguments to pass to the GPT API.
-        **kwargs : dict
-            Keyword arguments to pass to the GPT API.
-
-        Returns:
-        ----------
-        object
-            The response object from the GPT API.
-        """
-        return self.client.chat.completions.create(*args, **kwargs)
     
 
-    def summarize(self, news:News, n_words=60, collect=False):
+    def generate_response(self, message=None, seed=42):
         """Summarize a news article using GPT API. 
         If collect is True, then the output is appended to the reporter's collection.
         Parameters
         ----------
-        news : News
-            A news object
+        text : News
+            text of the news article to summarize
         n_words : int
             Number of words to summarize to
         collect : bool
             Whether to collect the output in the reporter's collection
         """
-        self.text = news.text
-        if self.text == "":
-            return
-        self._response = self.generate_response(
+        if not message:
+            message = [{"role": "user", "content": "Summarize the news article."}]
+ 
+        self._response = self.client.chat.completions.create(
             model=self.model,
             response_format=self.format,
-            seed=42,
-            messages=self.messages(n_words=n_words)
+            seed=seed,
+            messages=message
         )
         self._content = json.loads(self._response.choices[0].message.content)
+        return self._content
+
+
+    def summarize(self, news: News, collect=False, seed=42):
+        """Summarize a news article using GPT API.
+        Parameters
+        ----------
+        news : News
+            The news article to summarize.
+        collect : bool
+            Whether to collect the output in the reporter's collection.
+        """
+        if news.text == "":
+            return
         
-        news._content = self._content
-        news.title = news._content["title"]
-        news.summary = news._content["body"]
+        self.text = news.text
+        self._content = self.generate_response(prompt_summary(news.text, n_words=200), seed=seed)
+        news.title = self._content["title"]
+        news.summary = self._content["summary"]
+        news.country = self._content["country"]
+        news.investors = self._content["investors"]
+        news.company = self._content["company"]
+        if len(news.summary.split()) < 60:
+            news.body = news.summary
+        else:
+            self._content_short = self.generate_response(prompt_short_summary(news.summary, n_words=50), seed=seed)
+            news.body = self._content_short["summary"]
+        
 
         if collect:
             self.collection.append(news.output)
 
+
     def export_csv(self, csv_path, episode=""):
-            """
-            This method converts the reporter's collection into a pandas DataFrame and adds an "Episode" column with the provided episode number. The DataFrame is then saved to the specified csv file.The csv file will have the following columns:
-            "Title", "Body", "Date", "Source", "Topic", "Category", "Episode"
+        """
+        This method converts the reporter's collection into a pandas DataFrame and adds an "Episode" column with the provided episode number. The DataFrame is then saved to the specified csv file.The csv file will have the following columns:
+        "Title", "Body", "Date", "Source", "Topic", "Category", "Episode"
 
-            Parameters
-            ----------
-            csv_path : str
-                The path to the csv file where the collection will be saved.
-            episode : str, optional
-                The episode number associated with the collection. Default is an empty string.
+        Parameters
+        ----------
+        csv_path : str
+            The path to the csv file where the collection will be saved.
+        episode : str, optional
+            The episode number associated with the collection. Default is an empty string.
 
-            Raises
-            ------
-            AssertionError
-                If the collection is empty or if the episode is not provided.
+        Raises
+        ------
+        AssertionError
+            If the collection is empty or if the episode is not provided.
 
-            """
-            assert self.collection, "Collection is empty"
-            assert episode, "Episode must be provided"
-            df = pd.DataFrame(self.collection)
-            df["Episode"] = episode
-            df.to_csv(csv_path, index=False)
+        """
+        assert self.collection, "Collection is empty"
+        assert episode, "Episode must be provided"
+        df = pd.DataFrame(self.collection)
+        df["Episode"] = episode
+        df.to_csv(csv_path, index=False)
 
     def export_markdown(self, collection:list=[], csv_path:str=""):
         """
@@ -283,3 +278,25 @@ class GPTReporter:
                 f.write(markdown_output)
         else:
             return markdown_output
+        
+    
+    def translate(self, md_path:str):
+        """Translate the markdown file to Chinese.
+        """
+        with open(md_path, "r") as f:
+            text = f.read()
+        message = prompt_translate_Chinese(text)
+        content = self.generate_response(message)
+        assert "news" in content, "The output does not contain the 'news' field."
+
+        markdown_output = ""
+        for entry in content["news"]:
+            title = entry["title"].strip("**")
+            body = entry["content"]
+            source = entry["source"]
+            single_output = f"**{title}.**\n{body}(source: {source})\n\n"
+            markdown_output += single_output
+        
+        with open(md_path.replace(".md", "_zh.md"), "w") as f:
+            f.write(markdown_output)
+

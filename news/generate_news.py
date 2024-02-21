@@ -11,9 +11,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--url", default="", help="URL of the news article")
     parser.add_argument("-f", "--file", default="", help="Path to the file containing a list of URLs")
-    parser.add_argument("-s", "--summarize", default=True, action="store_true", help="Flag indicating whether to summarize the news article. Default is True")
+    parser.add_argument("-z", "--summarize", default=True, action="store_true", help="Flag indicating whether to summarize the news article. Default is True")
     parser.add_argument("-p", "--publish", default=False, action="store_true", help="Flag indicating whether to publish the news article. Default is False")
-    parser.add_argument("-n", "--num_words", default=60, help="Number of words to include in the summary")
+    parser.add_argument("-s", "--seed", default=42, help="Seed for the random number generator. Default is 42.")
     args = parser.parse_args()
     return args
 
@@ -22,7 +22,7 @@ def parse_file(file_path):
     """Parse a file of urls into a list of urls"""
     with open(file_path, "r") as f:
         urls_raw = f.read()
-        urls = ["http" + a.strip() for a in urls_raw.split("http") if a.strip()]
+        urls = ["http" + a.strip() for a in urls_raw.split("http") if a.strip() and not a.startswith("#")]
     return urls
 
 def check_openai_api_key():
@@ -47,6 +47,15 @@ def publish():
     reporter = GPTReporter("LiquidMetalClimate")
     reporter.export_markdown(csv_path=args.file)
 
+def translate():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", default="", help="Path to the generated md file.")
+    args = parser.parse_args()
+    assert args.file.endswith(".md"), "File must be a md file"
+    
+    reporter = GPTReporter("LiquidMetalClimate", api_key=check_openai_api_key())
+    reporter.translate(md_path=args.file)
+
 
 def main():
     openai_api_key = check_openai_api_key()
@@ -62,7 +71,7 @@ def main():
         for url in parse_file(args.file):
             if url == "\n": continue
             news = News.from_url(url, summarize=False)
-            reporter.summarize(news, n_words=args.num_words, collect=True)
+            reporter.summarize(news, collect=True)
             print(news.title)
         
         suffix = f"_EP{episode}" if episode else ""
@@ -74,11 +83,14 @@ def main():
 
     elif args.url:
         news = News.from_url(args.url, summarize=args.summarize, reporter=reporter)
-        print("\n" + news.title)
-        print("\n" + news.summary)
-        print("\n" + news.url)
-
+        # reporter.generate_response(news.text)
+        print(f"\nTitle: {news.title}")
+        print(f"\nCompany: {news.company}")
+        print(f"\nInvestors: {news.investors}")
+        print(f"\nBody: {news.body}")
+        print(f"\nSummary:{news.summary}")
+        print(f"\nCountry: {news.country}")
+        print(f"\nURL: {news.url}")
 
 if __name__ == "__main__":
-    publish()
-
+    pass
