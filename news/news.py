@@ -91,19 +91,12 @@ class News:
         article = Article(self.url)
         try:
             article.download()
-        except ArticleException as e:
-            self.text = str(e)
-            self.title = "Failed to download article"
-            return
-        
-        try:
             article.parse()
+            self.text = article.text
+            self.date = article.publish_date
         except ArticleException as e:
             self.text = str(e)
-            self.title = "Failed to parse article"
-            return
-        
-        self.text = article.text
+            self.title = "Failed to download/parse article"
         if not self.text:
             self.title = "Failed to parse article"
 
@@ -190,7 +183,8 @@ class GPTReporter:
         collect : bool
             Whether to collect the output in the reporter's collection.
         """
-        if news.text == "":
+        if "error" in news.text.lower():
+            news.summary = news.text
             return
         
         self.text = news.text
