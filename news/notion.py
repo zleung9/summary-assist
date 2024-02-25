@@ -36,13 +36,8 @@ def write_content_to_file(content, file_name):
 def write_row(
         client, 
         database_id,
-        episode: int=None,
-        title: str=None,
-        body: str=None,
-        category: str=None,
-        source: str=None,
-        date: str=None,
-        topics: list=None 
+        entry: int,
+        episode: int = None,
     ):
     '''
         Write a new row to the database.
@@ -51,13 +46,13 @@ def write_row(
         parent={"database_id": database_id},
         properties={
             "episode":{
-                "number": episode
+                "number": episode,
             },
             "title": {
                 "title": [
                     {
                         "text": {
-                            "content": title
+                            "content": entry["title"]
                         }
                     }
                 ]
@@ -66,51 +61,35 @@ def write_row(
                 "rich_text": [
                     {
                         "text": {
-                            "content": body
+                            "content": entry["body"]
                         }
                     }
                 ]
             },
             "category": {
                 "select": {
-                    "name": category
+                    "name": " " if not entry["category"] else entry["category"]
                 }
             },
             "source": {
-                "url": source
+                "url": entry["source"]
             },
             "date": {
                 "date": {
-                    "start": date
+                    "start": "2024-01-01" if not entry["date"] else entry["date"]
                 }
             },
             "topics": {
                 "multi_select": [
-                    {"name": topic} for topic in topics
+                    {"name": topic} for topic in entry["topics"]
                 ]
             }
         }
     )
-
-
-
-def main():
-    # Initialize the client
-    client = Client(auth=NOTION_KEY)
-
-    db_info = client.databases.retrieve(database_id=DATABASE_ID)
-    db_rows = client.databases.query(
-        database_id=DATABASE_ID, 
-        filter={
-            "property": "body",
-            "rich_text": {
-                "is_empty": True
-            }
-        }
-    )
     
-    write_content_to_file(db_rows, 'notion.json')
 
+def simple_rows(db_rows):
+    """Convert the notion database rows to a simple format."""
     simple_rows = []
     for row in db_rows["results"]:
         simpe_row = {
@@ -120,11 +99,27 @@ def main():
             "category": safe_get(row, "properties.category.select.name"),
             "source": safe_get(row, "properties.source.url"),
             "date": safe_get(row, "properties.date.date.start"),
-            "topics": [safe_get(topic, f"name") for topic in safe_get(row, "properties.topics.multi_select")]
+            "topics": ",".join([safe_get(topic, f"name") for topic in safe_get(row, "properties.topics.multi_select")])
         }
         simple_rows.append(simpe_row)
+    return simple_rows
+    
 
-    write_content_to_file(simple_rows, 'notion_simple.json')
+def main():
+    # Initialize the client
+    client = Client(auth=NOTION_KEY)
+    db_rows = client.databases.query(
+        database_id=DATABASE_ID,
+        filter={
+            "property": "episode",
+            "number": {
+                "equals": 37
+            }
+        }
+    )
+    
+    write_content_to_file(db_rows, 'notion.json')
+    write_content_to_file(simple_rows(db_rows), 'notion_simple.json')
 
     # row = {
     #     "title": "CEO Romi Mahajan Advises Private Fusion Industry",
@@ -141,7 +136,7 @@ def main():
 
     # rows = json.load(open('notion_simple.json', 'r'))
     # for row in rows:
-    #     write_row(client, DATABASE_ID, **row)
+    #     write_row(client, DATABASE_ID, row)
 
 if __name__ == '__main__': 
     main()
