@@ -1,5 +1,4 @@
 import os
-import json
 from news.news import News, GPTReporter
 import argparse
 
@@ -14,6 +13,7 @@ def parse_args():
     parser.add_argument("-z", "--summarize", default=True, action="store_true", help="Flag indicating whether to summarize the news article. Default is True")
     parser.add_argument("-p", "--publish", default=False, action="store_true", help="Flag indicating whether to publish the news article. Default is False")
     parser.add_argument("-s", "--seed", default=42, help="Seed for the random number generator. Default is 42.")
+
     args = parser.parse_args()
     return args
 
@@ -76,7 +76,8 @@ def main():
         
         suffix = f"_EP{episode}" if episode else ""
         file_name = args.file.replace(".txt", f"{suffix}.csv")
-        reporter.export_csv(file_name, episode=episode)
+        reporter.export_csv(file_name, episode=int(episode))
+        reporter.export_notion(episode=int(episode))
 
         if args.publish:
             reporter.export_markdown(csv_path=file_name)
@@ -85,6 +86,7 @@ def main():
         news = News.from_url(args.url, summarize=args.summarize, reporter=reporter)
         # reporter.generate_response(news.text)
         print(f"\nTitle: {news.title}")
+        print(f"\nDate: {news.date}")
         print(f"\nCompany: {news.company}")
         print(f"\nInvestors: {news.investors}")
         print(f"\nBody: {news.body}")

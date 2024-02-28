@@ -11,8 +11,8 @@ setup(name='news',
          'pydub',
          "numpy",
          "newspaper3k",
-         "google-generativeai"
-         "notion-client"
+         "google-generativeai",
+         "notion-client",
          "scrapy"
      ],
      entry_points={ # create scripts and add to sys.PATH
