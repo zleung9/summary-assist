@@ -3,11 +3,9 @@ from newspaper import Article
 from newspaper.article import ArticleException
 from openai import OpenAI
 import pandas as pd
-from news.prompts import (
-    prompt_summary, 
-    prompt_short_summary,
-    prompt_translate_Chinese
-)
+from news.prompts import prompt_summary, prompt_short_summary, prompt_translate_Chinese
+from news.notion import NOTION_KEY, DATABASE_ID, write_row, simple_rows
+from notion_client import Client
 
 class News:
     """A news article object.
@@ -28,7 +26,7 @@ class News:
         self.title = ""  # title of news
         self.date = ""  # date of news
         self.text = ""  # full text of the article
-        self.tags = ""  # tags of the article
+        self.tags = []  # tags of the article
         self.category = ""  # category of the article
         self.country = ""  # country where the news occurred
         self.investors = [] # investors involved in the news
@@ -37,12 +35,12 @@ class News:
     @property
     def output(self):
         return {
-            "Title": self.title,
-            "Body": self.body,
-            "Date": self.date,
-            "Source": self.url,
-            "Topic": self.tags,
-            "Category": self.category
+            "title": self.title,
+            "body": self.body,
+            "date": self.date,
+            "source": self.url,
+            "topics": self.tags,
+            "category": self.category
         }
 
     @classmethod
@@ -87,7 +85,7 @@ class News:
         Note: Make sure to set the `url` attribute of the object before calling this method.
 
         """
-        root_domain = self.url.split('/')[2]
+
         article = Article(self.url)
         try:
             article.download()
@@ -225,9 +223,12 @@ class GPTReporter:
         """
         assert self.collection, "Collection is empty"
         assert episode, "Episode must be provided"
+        for entry in self.collection:
+            entry["episode"] = episode
+            entry["topics"] = ",".join(entry["topics"])
         df = pd.DataFrame(self.collection)
-        df["Episode"] = episode
         df.to_csv(csv_path, index=False)
+
 
     def export_markdown(self, collection:list=[], csv_path:str=""):
         """
@@ -294,3 +295,32 @@ class GPTReporter:
         with open(md_path.replace(".md", "_zh.md"), "w") as f:
             f.write(markdown_output)
 
+
+    def export_notion(self, episode:int):
+        """Update the Notion database with the reporter's collection.
+        """
+        for entry in self.collection:
+            write_row(
+                client=Client(auth=NOTION_KEY),
+                database_id=DATABASE_ID,
+                entry=entry,
+                episode=episode
+            )
+    
+
+    def pull_notion(self, episode: int|list):
+        """Pull the Notion database with the reporter's collection.
+        """
+
+        client = Client(auth=NOTION_KEY)
+        db_rows = client.databases.query(
+            database_id=DATABASE_ID,
+            filter={
+                "property": "episode",
+                "number": {
+                    "equals": episode
+                }
+            }
+        )
+        df = pd.DataFrame(simple_rows(db_rows))
+        df.to_csv(f"notion_EP{episode}.csv", index=False)
