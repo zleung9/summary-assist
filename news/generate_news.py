@@ -1,5 +1,5 @@
 import os
-from news.news import News, GPTReporter
+from news.reporter import News, GPTReporter
 import argparse
 
 package_dir = os.path.dirname(os.path.abspath(__file__))
@@ -95,4 +95,4 @@ def main():
         print(f"\nURL: {news.url}")
 
 if __name__ == "__main__":
-    pass
+    main()

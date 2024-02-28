@@ -2,7 +2,7 @@ import sys
 sys.path.append('..')
 import unittest
 from unittest.mock import Mock, patch
-from news.news import GPTReporter, News
+from news.reporter import GPTReporter, News
 import json
 
 class TestGPTReporter(unittest.TestCase):
