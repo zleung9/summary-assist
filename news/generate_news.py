@@ -14,6 +14,7 @@ def parse_args():
     parser.add_argument("-z", "--summarize", default=True, action="store_true", help="Flag indicating whether to summarize the news article. Default is True")
     parser.add_argument("-p", "--publish", default=False, action="store_true", help="Flag indicating whether to publish the news article. Default is False")
     parser.add_argument("-s", "--seed", default=42, help="Seed for the random number generator. Default is 42.")
+    parser.add_argument("-m", "--model", default="openai", help="The model to use for generating the response. Default is openai.")
     args = parser.parse_args()
     return args
 
@@ -26,14 +27,20 @@ def parse_file(file_path):
     return urls
 
 
-def check_api_key(api_env_var: str="OPENAI_API_KEY"):
+def check_api_key(name="openai"):
     """Check if API key is set
     Parameters
     ----------
     api_provider : str
         The name of the API provider: openai, google.
     """
-
+    if name == "openai":
+        api_env_var = "OPENAI_API_KEY"
+    elif name == "google":
+        api_env_var = "GOOGLE_API_KEY"
+    else:
+        raise ValueError("Model must be either 'openai' or 'google'")
+    
     api_key = os.getenv(api_env_var)
     if not api_key:
         raise Exception(
@@ -54,20 +61,21 @@ def publish():
     reporter.export_markdown(csv_path=args.file)
 
 def translate():
+    global API_KEY
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", default="", help="Path to the generated md file.")
     args = parser.parse_args()
     assert args.file.endswith(".md"), "File must be a md file"
     
-    reporter = GPTReporter("LiquidMetalClimate", api_key=check_openai_api_key())
+    reporter = GPTReporter("LiquidMetalClimate", api_key=API_KEY)
     reporter.translate(md_path=args.file)
 
 
 def main():
-    openai_api_key = check_openai_api_key()
+    global API_KEY
     args = parse_args()
-
-    reporter = GPTReporter("LiquidMetalClimate", api_key=openai_api_key)
+    API_KEY = check_api_key(name=args.model)
+    reporter = GPTReporter("LiquidMetalClimate", api_key=API_KEY)
     if args.file:
         # save collection to file
         episode = input(
