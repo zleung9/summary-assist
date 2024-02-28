@@ -1,13 +1,16 @@
+import os
 from notion_client import Client
 import json
-
-# Your Notion integration's secret key
-NOTION_KEY = 'secret_ObTGTqjP17h0N9RDhd4YPbIxj6abqVvZVcaHJj8KTh0'
 
 # The ID of the database is the first UUID after the slash.
 # for example: https://www.notion.so/zleung/4af538f372fa4ac39ec69aeb04be2020?v=6423a31d633248bfb456a5ead527f23c&pvs=4
 # database ID is 4af538f372fa4ac39ec69aeb04be2020
-DATABASE_ID = '4af538f372fa4ac39ec69aeb04be2020'
+# For production the workspace is Oliver's and the database address is: 
+# https://www.notion.so/5f120796c787424b8c768cc179c94093?v=86bca37702c0489c904a1d5bf04aa940&pvs=4
+NOTION_KEY = os.getenv("NOTION_SECRET")
+DATABASE_ID = "5f120796c787424b8c768cc179c94093"
+NOTION_KEY_TEST = os.getenv("NOTION_SECRET_TEST")
+DATABASE_ID_TEST = '4af538f372fa4ac39ec69aeb04be2020'
 
 
 def safe_get(data, dot_chained_keys):

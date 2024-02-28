@@ -6,7 +6,12 @@ from newspaper.article import ArticleException
 from openai import OpenAI
 import pandas as pd
 from news.prompts import prompt_summary, prompt_short_summary, prompt_translate_Chinese
-from news.notion import NOTION_KEY, DATABASE_ID, write_row, simple_rows
+from news.notion import (
+    NOTION_KEY, NOTION_KEY_TEST, 
+    DATABASE_ID, DATABASE_ID_TEST,
+    write_row, 
+    simple_rows
+)
 from notion_client import Client
 
 class News:
@@ -298,13 +303,21 @@ class GPTReporter:
             f.write(markdown_output)
 
 
-    def export_notion(self, episode:int):
+    def export_notion(self, episode:int, test=False):
         """Update the Notion database with the reporter's collection.
         """
+        
+        if test:
+            notion_key = NOTION_KEY_TEST
+            database_id = DATABASE_ID_TEST
+        else:
+            notion_key = NOTION_KEY
+            database_id = DATABASE_ID
+        
         for entry in self.collection:
             write_row(
-                client=Client(auth=NOTION_KEY),
-                database_id=DATABASE_ID,
+                client=Client(auth=notion_key),
+                database_id=database_id,
                 entry=entry,
                 episode=episode
             )
