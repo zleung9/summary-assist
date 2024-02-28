@@ -1,6 +1,5 @@
 import os
-import json
-from news.news import News, GPTReporter
+from news.reporter import News, GPTReporter
 import argparse
 
 package_dir = os.path.dirname(os.path.abspath(__file__))
@@ -90,7 +89,8 @@ def main():
         
         suffix = f"_EP{episode}" if episode else ""
         file_name = args.file.replace(".txt", f"{suffix}.csv")
-        reporter.export_csv(file_name, episode=episode)
+        reporter.export_csv(file_name, episode=int(episode))
+        reporter.export_notion(episode=int(episode))
 
         if args.publish:
             reporter.export_markdown(csv_path=file_name)
@@ -99,6 +99,7 @@ def main():
         news = News.from_url(args.url, summarize=args.summarize, reporter=reporter)
         # reporter.generate_response(news.text)
         print(f"\nTitle: {news.title}")
+        print(f"\nDate: {news.date}")
         print(f"\nCompany: {news.company}")
         print(f"\nInvestors: {news.investors}")
         print(f"\nBody: {news.body}")
@@ -107,4 +108,4 @@ def main():
         print(f"\nURL: {news.url}")
 
 if __name__ == "__main__":
-    pass
+    main()
