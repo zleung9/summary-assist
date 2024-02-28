@@ -1,3 +1,5 @@
+import os
+import sys; sys.path.append(os.path.dirname(__file__))
 import json
 from newspaper import Article
 from newspaper.article import ArticleException
@@ -91,7 +93,7 @@ class News:
             article.download()
             article.parse()
             self.text = article.text
-            self.date = article.publish_date
+            self.date = article.publish_date.strftime("%Y-%m-%d") if article.publish_date else ""
         except ArticleException as e:
             self.text = str(e)
             self.title = "Failed to download/parse article"
