@@ -269,9 +269,9 @@ class GPTReporter:
 
         markdown_output = ""
         for entry in collection:
-            title = entry["Title"].replace("$", "\$")
-            body = entry["Body"].replace("$", "\$")
-            url = entry["Source"]
+            title = entry["title"].replace("$", "\$")
+            body = entry["body"].replace("$", "\$")
+            url = entry["source"]
             single_output = f"**{title}.** ([_link_]({url}))\n{body}\n\n"
             markdown_output += single_output
         
