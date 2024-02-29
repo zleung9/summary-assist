@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='news',
-      version='1.2.2',
+      version='1.3.2',
       description="Fetch and summarize news articles",
       license='See license',
       packages=find_packages(),
@@ -17,7 +17,7 @@ setup(name='news',
      ],
      entry_points={ # create scripts and add to sys.PATH
         'console_scripts': [
-            'generate_news = news.generate_news:main',
+            'generate_news = news.generate_news:generate',
             'publish_news = news.generate_news:publish',
             'translate_news = news.generate_news:translate'
         ],

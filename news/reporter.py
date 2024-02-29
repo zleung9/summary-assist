@@ -5,10 +5,17 @@ from newspaper import Article
 from newspaper.article import ArticleException
 from openai import OpenAI
 import pandas as pd
-from news.prompts import prompt_summary, prompt_short_summary, prompt_translate_Chinese
+from news.prompts import (
+    prompt_summary, 
+    prompt_short_summary, 
+    prompt_translate_Chinese,
+    convert_prompt_to_Gemini
+)
 from news.notion import NOTION_KEY, DATABASE_ID, write_row, simple_rows
 from notion_client import Client
+import google.generativeai as genai
 
+    
 class News:
     """A news article object.
     Attributes:
@@ -46,7 +53,7 @@ class News:
         }
 
     @classmethod
-    def from_url(cls, url, summarize=True, reporter: "GPTReporter" = None):
+    def from_url(cls, url, summarize=True, reporter: "Reporter" = None):
         """Create a news object from a URL.
         Parameters
         ----------
@@ -101,7 +108,7 @@ class News:
             self.title = "Failed to parse article"
 
 
-class GPTReporter:
+class Reporter:
     """A reporter object that uses the GPT API to summarize news articles.
 
     Attributes:
@@ -135,45 +142,46 @@ class GPTReporter:
         Summarizes a news article using the GPT API.
     """
 
-    def __init__(self, name, api_key=""):
+    def __init__(self, name):
         self.name = name
-        if api_key:
-            self.client = OpenAI(api_key=api_key)
-        else:
-            self.client = None
-        self.model = "gpt-3.5-turbo-1106"
-        self.format = { "type": "json_object" }
+        self.client = None
         self.text = ""
         self._response = None
         self._content = None
         self.collection = []
-    
+        self.model = None
+        self.api_key = ""
 
-    def generate_response(self, message=None, seed=42):
-        """Summarize a news article using GPT API. 
-        If collect is True, then the output is appended to the reporter's collection.
+    def get_api_key(self, name="openai"):
+        """Check if API key is set
         Parameters
         ----------
-        text : News
-            text of the news article to summarize
-        n_words : int
-            Number of words to summarize to
-        collect : bool
-            Whether to collect the output in the reporter's collection
+        api_provider : str
+            The name of the API provider: openai, google.
         """
-        if not message:
-            message = [{"role": "user", "content": "Summarize the news article."}]
- 
-        self._response = self.client.chat.completions.create(
-            model=self.model,
-            response_format=self.format,
-            seed=seed,
-            messages=message
-        )
-        self._content = json.loads(self._response.choices[0].message.content)
-        return self._content
+        if name == "openai":
+            api_env_var = "OPENAI_API_KEY"
+        elif name == "google":
+            api_env_var = "GOOGLE_API_KEY"
+        else:
+            raise ValueError("Model must be either 'openai' or 'google'")
+        
+        api_key = os.getenv(api_env_var)
+        if not api_key:
+            raise Exception(
+                f"Please set your {api_env_var} environment variable: export ${api_env_var}=<your key>"
+                "\nOr add it to a .env file in the root directory of this project."
+            )
+        else:
+            return api_key
 
 
+    def generate_response(self, *args, **kwargs):
+        """Generates a response using the GPT API.
+        """
+        raise NotImplementedError("generate_response method must be implemented in a subclass")
+
+    
     def summarize(self, news: News, collect=False, seed=42):
         """Summarize a news article using GPT API.
         Parameters
@@ -326,3 +334,60 @@ class GPTReporter:
         )
         df = pd.DataFrame(simple_rows(db_rows))
         df.to_csv(f"notion_EP{episode}.csv", index=False)
+
+
+class OpenaiReporter(Reporter):
+    def __init__(self, name):
+        super().__init__(name)
+        self.api_key = self.get_api_key(name="openai")
+        print(self.api_key)
+        self.client = OpenAI(api_key=self.api_key)
+        self.model = "gpt-3.5-turbo-1106"
+        self.format = { "type": "json_object" }
+    
+    def generate_response(self, message=None, seed=42):
+        """Summarize a news article using GPT API. 
+        If collect is True, then the output is appended to the reporter's collection.
+        Parameters
+        ----------
+        text : News
+            text of the news article to summarize
+        n_words : int
+            Number of words to summarize to
+        collect : bool
+            Whether to collect the output in the reporter's collection
+        """
+        if not message:
+            message = [{"role": "user", "content": "Summarize the news article."}]
+ 
+
+        self._response = self.client.chat.completions.create(
+            model=self.model,
+            response_format=self.format,
+            seed=seed,
+            messages=message
+        )
+        self._content = json.loads(self._response.choices[0].message.content)
+        return self._content
+    
+
+class GeminiReporter(Reporter):
+    def __init__(self, name):
+        super().__init__(name)
+        self.client = self.get_client()
+    
+    def get_client(self):
+        self.api_key = self.get_api_key(name="google")
+        genai.configure(api_key=self.api_key)
+        return genai.GenerativeModel('gemini-pro')
+
+    def generate_response(self, message=None, seed=42):
+        """Generates a response using the GPT API.
+        """
+        message = convert_prompt_to_Gemini(message)
+        message.append({"role": "user", "parts": ["Now please go ahead."]})
+        for m in message:
+            print("\n", m, "\n")
+        self._response = self.client.generate_content(message)
+        self._content = self._response.text
+        return self._content

@@ -95,8 +95,7 @@ def prompt_short_summary(text, n_words=60):
         ]
         return prompt
 
-
-def prompt_translate_Chinese(text):
+def prompt_translate_Chinese(text, style="openai"):
     """
     Provide a group of prompt messages for translating a Chinese text to English.
 
@@ -109,6 +108,7 @@ def prompt_translate_Chinese(text):
     ------
     The prompt messages are designed to generate JSON output.
     """
+    assert style in ["openai", "google"]
     prompt =  [
         {
             "role": "system", 
@@ -136,4 +136,26 @@ def prompt_translate_Chinese(text):
             "content": f"Please translate the following news into Chinese. Names (such as company, person, location, etc) stay in its original language. Translation should conform to Chinese writing habits.\n\n{text}"
         }
     ]
+    if style == "google":
+         prompt = convert_prompt_to_Gemini(prompt)
     return prompt
+
+
+def convert_prompt_to_Gemini(prompt):
+    prompt_gemini = []
+    for message in prompt:
+        if message['role'] == 'user':
+            prompt_gemini.append({'role':'user', 'parts':[message['content']]})
+        elif message['role'] == 'assistant':
+            prompt_gemini.append({'role':'model', 'parts':[message['content']]})
+        else:
+            prompt_gemini.append({'role':'system', 'parts':[message['content']]}) 
+    return prompt_gemini
+
+
+if __name__ == "__main__":
+    text = "The National Renewable Energy Laboratory (NREL) is supporting the aviation industry in fine-tuning sustainable aviation fuel (SAF) chemistry, crucial for decarbonizing flight. NREL's computational science center is simulating detailed SAF combustion in a 'virtual jet engine,' aiming to provide insights for optimizing safety and performance. This effort may accelerate SAF production and usage, potentially reshaping jet fuel chemistry in the industry."
+    prompt = prompt_translate_Chinese(text)
+    print(prompt)
+    print("\n\n\n")
+    print(convert_prompt_to_Gemini(prompt))

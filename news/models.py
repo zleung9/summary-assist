@@ -1,17 +1,9 @@
 import os
-import pathlib
-import textwrap
 
 import google.generativeai as genai
-GOOGLE_API_KEY=api_key = os.getenv("GOOGLE_API_KEY")
-
-for m in genai.list_models():
-    if 'generateContent' in m.supported_generation_methods:
-        print(m.name)
-
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel('gemini-pro')
-response = model.generate_content("What is the meaning of life?")
-print(response.text)
+
 
 model = genai.GenerativeModel('gemini-pro')
 chat = model.start_chat(history=[])
