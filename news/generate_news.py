@@ -57,7 +57,7 @@ def translate():
     reporter.translate(md_path=args.file)
 
 
-def main():
+def generate():
     openai_api_key = check_openai_api_key()
     args = parse_args()
 
@@ -95,4 +95,4 @@ def main():
         print(f"\nURL: {news.url}")
 
 if __name__ == "__main__":
-    main()
+    generate()

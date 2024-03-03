@@ -13,13 +13,15 @@ setup(name='news',
          "newspaper3k",
          "google-generativeai",
          "notion-client",
-         "scrapy"
+         "scrapy",
+         "gradio"
      ],
      entry_points={ # create scripts and add to sys.PATH
         'console_scripts': [
-            'generate_news = news.generate_news:main',
+            'generate_news = news.generate_news:generate',
             'publish_news = news.generate_news:publish',
-            'translate_news = news.generate_news:translate'
+            'translate_news = news.generate_news:translate',
+            "copilot = gui.gradio:main",
         ],
     },
 )
