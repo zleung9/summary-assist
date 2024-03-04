@@ -1,5 +1,5 @@
 import os
-from news.reporter import News, GPTReporter
+from news.reporter import News, OpenaiReporter, GeminiReporter
 import argparse
 
 package_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument("-z", "--summarize", default=True, action="store_true", help="Flag indicating whether to summarize the news article. Default is True")
     parser.add_argument("-p", "--publish", default=False, action="store_true", help="Flag indicating whether to publish the news article. Default is False")
     parser.add_argument("-s", "--seed", default=42, help="Seed for the random number generator. Default is 42.")
-
+    parser.add_argument("-m", "--model", default="openai", help="The model to use for generating the response. Default is openai.")
     args = parser.parse_args()
     return args
 
@@ -25,17 +25,14 @@ def parse_file(file_path):
         urls = ["http" + a.strip() for a in urls_raw.split("http") if a.strip() and not a.startswith("#")]
     return urls
 
-def check_openai_api_key():
-    """Check if OpenAI API key is set"""
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        raise Exception(
-            "Please set your OPENAI_API_KEY environment variable: export $OPENAI_API_KEY=<your key>"
-            "\nOr add it to a .env file in the root directory of this project."
-        )
-    else:
-        return openai_api_key
 
+def get_reporter(name, model="openai"):
+    if model == "openai":
+        return OpenaiReporter(name)
+    elif model == "google":
+        return GeminiReporter(name)
+    else:
+        raise ValueError(f"Model {model} not recognized")
 
 
 def publish():
@@ -43,25 +40,23 @@ def publish():
     parser.add_argument("-f", "--file", default="", help="Path to the generated csv file.")
     args = parser.parse_args()
     assert args.file.endswith(".csv"), "File must be a csv file"
-
-    reporter = GPTReporter("LiquidMetalClimate")
+    reporter = get_reporter("LiquidMetalClimate", model=args.model)
     reporter.export_markdown(csv_path=args.file)
 
+
 def translate():
+    global API_KEY
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", default="", help="Path to the generated md file.")
     args = parser.parse_args()
     assert args.file.endswith(".md"), "File must be a md file"
-    
-    reporter = GPTReporter("LiquidMetalClimate", api_key=check_openai_api_key())
+    reporter = get_reporter("LiquidMetalClimate", model=args.model)
     reporter.translate(md_path=args.file)
 
 
 def generate():
-    openai_api_key = check_openai_api_key()
     args = parse_args()
-
-    reporter = GPTReporter("LiquidMetalClimate", api_key=openai_api_key)
+    reporter = get_reporter("LiquidMetalClimate", model=args.model)
     if args.file:
         # save collection to file
         episode = input(
