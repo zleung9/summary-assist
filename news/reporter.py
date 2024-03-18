@@ -272,9 +272,9 @@ class Reporter:
 
         markdown_output = ""
         for entry in collection:
-            title = entry["Title"].replace("$", "\$")
-            body = entry["Body"].replace("$", "\$")
-            url = entry["Source"]
+            title = entry["title"].replace("$", "\$")
+            body = entry["body"].replace("$", "\$")
+            url = entry["source"]
             single_output = f"**{title}.** ([_link_]({url}))\n{body}\n\n"
             markdown_output += single_output
         
@@ -285,12 +285,17 @@ class Reporter:
             return markdown_output
         
     
-    def translate(self, md_path:str):
+    def translate(self, md_path:str, show_prompt=False):
         """Translate the markdown file to Chinese.
         """
         with open(md_path, "r") as f:
             text = f.read()
         message = prompt_translate_Chinese(text)
+        if show_prompt:
+            print("The following prompt was used to generate the translation:\n")
+            for m in message:
+                print(m["content"])
+            return
         content = self.generate_response(message)
         assert "news" in content, "The output does not contain the 'news' field."
 
@@ -340,7 +345,6 @@ class OpenaiReporter(Reporter):
     def __init__(self, name):
         super().__init__(name)
         self.api_key = self.get_api_key(name="openai")
-        print(self.api_key)
         self.client = OpenAI(api_key=self.api_key)
         self.model = "gpt-3.5-turbo-1106"
         self.format = { "type": "json_object" }

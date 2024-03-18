@@ -11,9 +11,10 @@ def parse_args():
     parser.add_argument("-u", "--url", default="", help="URL of the news article")
     parser.add_argument("-f", "--file", default="", help="Path to the file containing a list of URLs")
     parser.add_argument("-z", "--summarize", default=True, action="store_true", help="Flag indicating whether to summarize the news article. Default is True")
-    parser.add_argument("-p", "--publish", default=False, action="store_true", help="Flag indicating whether to publish the news article. Default is False")
+    parser.add_argument("-b", "--publish", default=False, action="store_true", help="Flag indicating whether to publish the news article. Default is False")
     parser.add_argument("-s", "--seed", default=42, help="Seed for the random number generator. Default is 42.")
     parser.add_argument("-m", "--model", default="openai", help="The model to use for generating the response. Default is openai.")
+    parser.add_argument("-p", "--show_prompt", action="store_true", help="Flag indicating whether to show the prompt. Default is False.")
     args = parser.parse_args()
     return args
 
@@ -36,22 +37,17 @@ def get_reporter(name, model="openai"):
 
 
 def publish():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--file", default="", help="Path to the generated csv file.")
-    args = parser.parse_args()
+    args = parse_args()
     assert args.file.endswith(".csv"), "File must be a csv file"
     reporter = get_reporter("LiquidMetalClimate", model=args.model)
     reporter.export_markdown(csv_path=args.file)
 
 
 def translate():
-    global API_KEY
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--file", default="", help="Path to the generated md file.")
-    args = parser.parse_args()
+    args = parse_args()
     assert args.file.endswith(".md"), "File must be a md file"
     reporter = get_reporter("LiquidMetalClimate", model=args.model)
-    reporter.translate(md_path=args.file)
+    reporter.translate(md_path=args.file, show_prompt=args.show_prompt)
 
 
 def generate():

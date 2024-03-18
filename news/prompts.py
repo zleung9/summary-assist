@@ -116,7 +116,7 @@ def prompt_translate_Chinese(text, style="openai"):
         },
         {
             "role": "user",
-            "content": "You are provided with some text in the form of Markdown. Please translate them into Chinese while maintaining the Markdown style. Let's to it step by step:Also remove the link, instead extract the root url from the link and attached to the end of each paragraph."
+            "content": "You are provided with some text in the form of Markdown. Please translate them into Chinese while maintaining the Markdown style. Let's to it step by step:"
             "Step 1, translate the contained text and leave the link as is. Put the main text in the 'content' field."
             "Step 2, Make the title bold type in Markdown, and put it in the 'title' field."
             "Step 3, Extract root url from the link and put it in the 'source' field."
@@ -133,7 +133,7 @@ def prompt_translate_Chinese(text, style="openai"):
         },
         {
             "role": "user",
-            "content": f"Please translate the following news into Chinese. Names (such as company, person, location, etc) stay in its original language. Translation should conform to Chinese writing habits.\n\n{text}"
+            "content": f"Please translate the following news into Chinese. Make sure the translation conform to Chinese writing habits. Names (such as company, person, location, etc) stay in its original language. \n\n{text}"
         }
     ]
     if style == "google":
