@@ -153,6 +153,27 @@ def convert_prompt_to_Gemini(prompt):
     return prompt_gemini
 
 
+def convert_prompt_to_Gemini_1(prompt):
+    context = ""
+    examples = []
+    messages = ""
+    i = 0
+    while i < len(prompt):
+        m = prompt[i]    
+        if m['role'] == "system":
+            context  = m['content']
+        elif m['role'] == "user":
+            if i == len(prompt) - 1:
+                messages += m['content'] + "\n"
+            else:
+                if prompt[i+1]['role'] == "assistant":
+                    examples.append((m['content'], prompt[i+1]['content']))
+                    i += 1
+                else:
+                    messages += m['content'] + "\n"
+        i += 1
+    return context, examples, messages
+        
 if __name__ == "__main__":
     text = "The National Renewable Energy Laboratory (NREL) is supporting the aviation industry in fine-tuning sustainable aviation fuel (SAF) chemistry, crucial for decarbonizing flight. NREL's computational science center is simulating detailed SAF combustion in a 'virtual jet engine,' aiming to provide insights for optimizing safety and performance. This effort may accelerate SAF production and usage, potentially reshaping jet fuel chemistry in the industry."
     prompt = prompt_translate_Chinese(text)

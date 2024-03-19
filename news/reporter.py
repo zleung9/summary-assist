@@ -9,7 +9,7 @@ from news.prompts import (
     prompt_summary, 
     prompt_short_summary, 
     prompt_translate_Chinese,
-    convert_prompt_to_Gemini
+    convert_prompt_to_Gemini_1
 )
 from news.notion import NOTION_KEY, DATABASE_ID, write_row, simple_rows
 from notion_client import Client
@@ -40,6 +40,7 @@ class News:
         self.country = ""  # country where the news occurred
         self.investors = [] # investors involved in the news
         self.company = ""  # main company the news is about
+        self.temeperature = 0  # temperature of the news
 
     @property
     def output(self):
@@ -191,23 +192,29 @@ class Reporter:
         collect : bool
             Whether to collect the output in the reporter's collection.
         """
-        if "error" in news.text.lower():
+        if "error" in news.text.lower() or not news.text:
             news.summary = news.text
             return
         
         self.text = news.text
         self._content = self.generate_response(prompt_summary(news.text, n_words=200), seed=seed)
-        news.title = self._content["title"]
-        news.summary = self._content["summary"]
-        news.country = self._content["country"]
-        news.investors = self._content["investors"]
-        news.company = self._content["company"]
+        try:
+            news.title = self._content["title"]
+            news.summary = self._content["summary"]
+            news.country = self._content["country"]
+            news.investors = self._content["investors"]
+            news.company = self._content["company"]
+        except:
+            return
         if len(news.summary.split()) < 60:
             news.body = news.summary
         else:
             self._content_short = self.generate_response(prompt_short_summary(news.summary, n_words=50), seed=seed)
-            news.body = self._content_short["summary"]
-        
+            try:
+                news.body = self._content_short["summary"]
+            except:
+                news.body = ""
+                return
 
         if collect:
             self.collection.append(news.output)
@@ -378,20 +385,27 @@ class OpenaiReporter(Reporter):
 class GeminiReporter(Reporter):
     def __init__(self, name):
         super().__init__(name)
-        self.client = self.get_client()
+        # self.client = self.get_client()
+        self.temperture = 0.1
     
-    def get_client(self):
-        self.api_key = self.get_api_key(name="google")
-        genai.configure(api_key=self.api_key)
-        return genai.GenerativeModel('gemini-pro')
+    # def get_client(self):
+    #     self.api_key = self.get_api_key(name="google")
+    #     genai.configure(api_key=self.api_key)
+    #     return genai.GenerativeModel('gemini-pro')
 
     def generate_response(self, message=None, seed=42):
         """Generates a response using the GPT API.
         """
-        message = convert_prompt_to_Gemini(message)
-        message.append({"role": "user", "parts": ["Now please go ahead."]})
-        for m in message:
-            print("\n", m, "\n")
-        self._response = self.client.generate_content(message)
-        self._content = self._response.text
-        return self._content
+        context, examples, messages = convert_prompt_to_Gemini_1(message)
+        messages += "\nRemove the trailing comma at the end of the json output."
+        response = genai.chat(
+            context=context, 
+            examples=examples, 
+            messages=messages,
+        ) 
+        try: # the response is a Markdown string with the JSON output formatted as a code block
+            response_json_string = response.lstrip("```json\n").rstrip("\n```")
+        except:
+            response_json_string = response.last.split("```")[1].lstrip("json\n")
+        response_json = json.loads(response_json_string)
+        return response_json
